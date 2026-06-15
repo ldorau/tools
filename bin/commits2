@@ -1,0 +1,42 @@
+#!/bin/bash
+
+if [ "$1" != "" ]; then
+	OWNER=$1
+else
+	OWNER="Andy Rudoff"
+fi
+
+# echo "OWNER = <$OWNER>"
+
+BRANCH= # origin/main
+TMP_FILE=/tmp/tmp-commits-$$
+TMP_LOG=/tmp/tmp-commits-log-$$
+TMP_AUTHORS=/tmp/tmp-authors-$$
+TMP=/tmp/tmp-commits-authors-$$
+rm -f $TMP_FILE $TMP_LOG
+
+git log $BRANCH > $TMP_LOG
+PULLS=`cat $TMP_LOG | grep -A2 "Date:" | grep "Merge" | wc -l`
+
+cat $TMP_LOG | grep "Author" > $TMP
+cat $TMP | sort | uniq | sed "s/Author: //g" | sed "s/ </@/g" | cut -d"@" -f1 | sed "s/ /qwerty/g" | sort | uniq > $TMP_AUTHORS
+# cat $TMP_AUTHORS
+
+for guy in `cat $TMP_AUTHORS`; do
+	guy=`echo $guy | sed "s/qwerty/ /g"`
+	# echo "--------------------------"
+	# echo "$guy"
+	COMMITS=`cat $TMP | grep "$guy" | wc -l`
+	# echo "`cat $TMP | grep "$guy"`"
+	if [ "$guy" == "$OWNER" ]; then
+		COMMITS=$(($COMMITS - $PULLS))
+	fi
+	# echo "$guy   $COMMITS"
+	echo "$COMMITS $guy" >> $TMP_FILE
+	# echo "--------------------------"
+done
+
+echo "Commits on branch $BRANCH:"
+cat $TMP_FILE | sort -g -r
+rm -f $TMP_FILE $TMP_LOG $TMP_AUTHORS $TMP
+

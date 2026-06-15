@@ -1,0 +1,61 @@
+#!/bin/bash
+
+[ "$1" != "" ] && MAX=$1 || MAX=3
+
+if [ "$2" = "d" -a "$3" = "mask" ]; then
+	echo
+	echo "All DENY IN with mask:"
+	sudo ufw status numbered | grep -e "DENY IN" | grep -e "/"
+	DELETE=$(sudo ufw status numbered | grep -e "DENY IN" | grep -e "/" | cut -d'[' -f2 | cut -d']' -f1 | awk '{print $1}' | sort -n -r | xargs)
+	echo -n "Delete the following rules (y/n)?: $DELETE "
+	read -n1 resp
+	echo
+	if [ "$resp" == "y" ]; then
+		ufw-delete $DELETE
+	fi
+	exit 0
+fi
+
+if [ "$2" = "d" -a "$3" = "deny" ]; then
+	echo
+	echo "All DENY IN:"
+	sudo ufw status numbered | grep -e "DENY IN"
+	DELETE=$(sudo ufw status numbered | grep -e "DENY IN" | cut -d'[' -f2 | cut -d']' -f1 | awk '{print $1}' | sort -n -r | xargs)
+	echo -n "Delete the following rules (y/n)?: $DELETE "
+	read -n1 resp
+	echo
+	if [ "$resp" == "y" ]; then
+		ufw-delete $DELETE
+	fi
+	exit 0
+fi
+
+TMP=/tmp/numbered.txt
+sudo ufw status numbered | grep -v -e "192.168.0.0" > $TMP
+
+if [ "$2" = "n" ]; then
+	if [ "$3" = "1" ]; then
+		N_TOKENS="1"
+	else
+		N_TOKENS="1-$3"
+	fi
+else
+	N_TOKENS="1-2"
+fi
+
+for n in $(cat $TMP | cut -d']' -f 2- | awk '{print $4}' | cut -d. -f${N_TOKENS} | sort -n | uniq); do
+	N=$(cat $TMP | grep -c -e "[^.0-9]$n\.")
+	[ $N -lt $MAX ] && continue
+	echo "IP starting from $n: $N"
+	cat $TMP | grep -e "[^.0-9]$n\."
+	if [ "$2" = "d" -a "$3" = "$n" ]; then
+		DELETE=$(cat $TMP | grep -e "[^.0-9]$n\." | cut -d'[' -f2 | cut -d']' -f1 | awk '{print $1}' | sort -n -r | head -n-1 | xargs)
+		echo -n "Delete the following rules (y/n)?: $DELETE "
+		read -n1 resp
+		echo
+		if [ "$resp" == "y" ]; then
+			ufw-delete $DELETE
+		fi
+	fi
+done
+rm $TMP

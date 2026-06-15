@@ -1,0 +1,28 @@
+#!/bin/bash
+
+SRC=$1
+DST=$2
+
+function create_number() {
+	N=$1
+	C=$(echo $N | wc -c)
+	case $C in
+	2) N="00$N" ;;
+	3) N="0$N" ;;
+	esac
+	echo $N
+}
+
+FILES=$(ls -1 $SRC | sort | xargs)
+
+N=1
+
+echo ">>> mkdir $DST/$SRC"
+mkdir -p $DST/$SRC
+for f in $FILES; do
+	NN=$(create_number $N)
+	N=$(($N + 1))
+	NEW_NAME=VOICE${NN}.WAV
+	echo "$f -> $NEW_NAME"
+	cp -L $SRC/$f $DST/$SRC/$NEW_NAME
+done

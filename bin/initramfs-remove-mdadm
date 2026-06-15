@@ -1,0 +1,46 @@
+#!/bin/bash
+
+if [ "$1" = "" ]; then
+	echo "Removes MD files from given initramfs file."
+	echo "Usage: initramfs-remove-mdadm  <INITRAMFS_FILE>"
+	exit 0
+fi
+if [ ! -e $1 ]; then
+	echo "File $1 does not exist!"
+	exit 1
+fi
+
+INITRAMFS_FILE=$1
+TEMPDIR=/tmp/initramfs-$$
+
+echo "Creating temporary directory: $TEMPDIR"
+mkdir -p $TEMPDIR
+cd $TEMPDIR
+rm -f -r ./*
+
+echo "Uncompressing $INITRAMFS_FILE file to temp dir $TEMPDIR..." 
+cp $INITRAMFS_FILE initramfs.gz
+gzip -d initramfs.gz
+cpio -i < initramfs
+
+echo "Removing MD files..."
+rm -f initramfs
+rm -f ./sbin/md*
+rm -f ./etc/mdadm.conf
+
+echo "Saving original file $INITRAMFS_FILE to $INITRAMFS_FILE-ORIG-$$.img..." 
+mv $INITRAMFS_FILE $INITRAMFS_FILE-OLD-$$.img 
+echo "File saved."
+
+echo "Creating new $INITRAMFS_FILE file... Please wait..."
+find . | cpio --quiet -H newc -o | gzip -9 -n > $INITRAMFS_FILE
+
+echo "Removing temp dir $TEMPDIR..."
+cd ~
+rm -f -r $TEMPDIR
+
+echo "MD files were removed from $INITRAMFS_FILE file."
+echo "Original file $INITRAMFS_FILE was saved to $INITRAMFS_FILE-ORIG-$$.img" 
+echo "Done."
+
+

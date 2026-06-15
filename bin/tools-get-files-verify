@@ -1,0 +1,21 @@
+#!/bin/bash
+
+TOOLS=$HOME/work/tools/bin
+
+TMP=/tmp/tmp.$$
+
+rm -f $TMP
+
+if [ "$1" != "" ]; then
+	tools-get-files $1
+	exit $?
+fi
+
+for file in $(tools-get-files); do
+	echo "=${file}=" >> $TMP
+done
+
+echo "Missing files:"
+for file in $(ls -1 $TOOLS | xargs); do
+	grep -q -e "=${file}=" $TMP || echo ${file}
+done

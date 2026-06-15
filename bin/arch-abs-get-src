@@ -1,0 +1,20 @@
+#!/bin/bash -e
+
+TMP=/tmp/out
+
+mkdir -p ~/abs
+cd ~/abs
+
+if [ ! -d "$1" ]; then
+	asp checkout $1
+	if [ -d "$(pwd)/$1" -a ! -f "$(pwd)/$1/trunk/PKGBUILD" ]; then
+		echo -n "Removing empty repo and exiting... "
+		rm -rf $(pwd)/$1
+		echo "done."
+		exit 0
+	fi
+fi
+
+cd $1
+asp update
+git pull

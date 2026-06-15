@@ -1,0 +1,17 @@
+#!/bin/bash -e
+
+if [ "$1" == "" ]; then
+	echo "Usage: $0 <branch-to-rebase>"
+	exit 1
+fi
+
+ORIG_BRANCH=$(git-get-current-branch)
+
+review-branch $1
+
+REVIEW_BRANCH=$(git-get-current-branch)
+
+git rebase -i $ORIG_BRANCH
+git checkout $ORIG_BRANCH
+git reset --hard $REVIEW_BRANCH
+git branch -D $REVIEW_BRANCH

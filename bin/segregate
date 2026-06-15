@@ -1,0 +1,16 @@
+#!/bin/bash
+
+case "$2" in
+1)
+	grep -nH -e "$1" ./* 2>/dev/null | grep -v -e "Binary file" # SEARCH
+	;;
+2)
+	grep -nH -e "$1" ./* 2>/dev/null | grep -v -e "Binary file" | cut -d: -f1 | sort | uniq # FILES
+	;;
+3)
+	echo "mv grep -nH -e "$1" ./* 2>/dev/null | grep -v -e \"Binary file\" | cut -d: -f1 | sort | uniq | xargs ./work/"
+	mv `grep -nH -e "$1" ./* 2>/dev/null | grep -v -e "Binary file" | cut -d: -f1 | sort | uniq | xargs` ./work/ # MOVE
+	;;
+esac
+
+exit 0

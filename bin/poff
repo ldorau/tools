@@ -1,0 +1,6 @@
+#!/bin/bash
+
+DIR=$(dirname $0)
+
+echo "$ nohup poff.sh $* &"
+nohup ${DIR}/poff.sh $* &

@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set +e
+
+OLD_BR=$(git-get-current-branch)
+main
+
+function remove_branches() {
+	BRANCHES=$*
+	for b in $BRANCHES; do
+		echo -n "Remove branch '$b' (y/n)? "
+		read -n1 resp
+		echo
+		echo
+		if [ "$resp" == "y" ]; then
+			echo Removing branch $b ...
+			git-rm-branch $b
+		else
+			echo Skipping branch $b
+		fi
+	done
+}
+
+PATTERNS="$*"
+
+for PATTERN in $PATTERNS; do
+	BRANCHES=`git branch | grep $PATTERN | xargs`
+	remove_branches $BRANCHES
+	BRANCHES=`git branch -a | grep $PATTERN | xargs`
+	remove_branches $BRANCHES
+done
+
+git checkout $OLD_BR
+
+echo "Done."

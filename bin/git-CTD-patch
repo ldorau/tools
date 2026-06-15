@@ -1,0 +1,28 @@
+#!/bin/bash
+
+[ "$1" == "" ] && echo "No commit hash given" && exit 1
+
+CTD_LOG=~/CTD/CTD.txt
+
+mkdir -p ~/CTD
+
+if [ $(git log -1 $1 | wc -l) -eq 0 ]; then
+	echo "Wrong hash"
+	exit 1
+fi
+
+git log -1 $1
+echo
+
+git log -1 $1 >> $CTD_LOG
+echo >> $CTD_LOG
+echo >> $CTD_LOG
+echo >> $CTD_LOG
+
+git-temp $1
+PATCH=$(git format-patch -1)
+mv $PATCH ~/CTD/$1.txt
+BRANCH=$(git-get-current-branch)
+main
+git-rm-branch $BRANCH
+

@@ -1,0 +1,59 @@
+#!/bin/bash
+
+set -e
+
+[ ! "$1" ] && exit 0
+
+function get_commit_range_from_last_merge {
+	# get commit id of the last merge
+	LAST_MERGE=$(git log --merges --pretty=%H -1)
+	LAST_COMMIT=$(git log --pretty=%H -1)
+	if [ "$LAST_MERGE" == "$LAST_COMMIT" ]; then
+		# GitHub Actions commits its own merge in case of pull requests
+		# so the first merge commit has to be skipped.
+		LAST_MERGE=$(git log --merges --pretty=%H -2 | tail -n1)
+	fi
+	if [ "$LAST_MERGE" == "" ]; then
+		# possible in case of shallow clones
+		COMMIT_RANGE=""
+	else
+		COMMIT_RANGE="$LAST_MERGE..HEAD"
+		# make sure it works now
+		if ! git rev-list $COMMIT_RANGE >/dev/null; then
+			COMMIT_RANGE=""
+		fi
+	fi
+	echo $COMMIT_RANGE
+}
+
+TODO="./finish.sh"
+BRANCH=$(git-get-current-branch)
+HEAD=$(git-get-current-commit)
+RANGE=$(get_commit_range_from_last_merge)
+commits=$(git rev-list $RANGE --reverse)
+
+echo "Commits:"
+for commit in $commits; do
+	git log -1 $commit --pretty="%h: %s"
+	git log -1 $commit -p | grep -e "$1" > /dev/null || continue
+
+	TEMP_BRANCH=temp-$$
+	git checkout -b "OLD-$$"
+	git commit -a --no-edit -m "AUTO-SAVE" && true
+	git checkout -b $TEMP_BRANCH
+	git reset --hard $commit
+	# grp "$1"
+	echo "#!/bin/bash -ex" > $TODO
+	echo "git commit -a --amend --no-edit" >> $TODO
+	echo "git cherry-pick $commit..$HEAD" >> $TODO
+	echo "rm -f $TODO" >> $TODO
+	echo "git status" >> $TODO
+	chmod +x $TODO
+	git log -1
+	git status
+	echo
+	echo "###############################################################"
+	echo "   STOP !!! Edit what you want and run \"$TODO\" at the end"
+	echo "###############################################################"
+	break
+done

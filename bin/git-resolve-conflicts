@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ ! -f $1 ]; then
+	echo "Usage: $(basename $0) <file-with-conflicts> [old|1|both]"
+	exit 1
+fi
+
+FILE=$1
+
+if [ "$2" == "1" -o "$2" == "old" ]; then
+	sed -i '/<<<<<<< HEAD/d' $FILE
+	sed -i '/=======/,/>>>>>>>/d' $FILE
+elif [ "$2" == "both" ]; then
+	sed -i '/<<<<<<< HEAD/d' $FILE
+	sed -i '/=======/d' $FILE
+	sed -i '/>>>>>>>/d' $FILE
+else
+	sed -i '/<<<<<<< HEAD/,/=======/d' $FILE
+	sed -i '/>>>>>>>/d' $FILE
+fi

@@ -1,0 +1,29 @@
+#!/bin/bash
+
+UPSTREAM=$(git-get-upstream)
+
+main
+cp src/librpma.map /tmp/
+git fetch $UPSTREAM man-pages
+git checkout -b man-pages $UPSTREAM/man-pages
+if [ $? -ne 0 ]; then
+        git checkout man-pages
+        git reset --hard $UPSTREAM/man-pages
+fi
+
+for f in $(cat /tmp/librpma.map | grep -e 'rpma_' | cut -d'r' -f2- | cut -d';' -f1); do \
+        grep -q -e "r$f.3" ./_data/releases_linux.yml || echo ">>> Missing in releases_linux.yml: r$f"; \
+        grep -q -e "r$f.3" ./_data/libs_map.yml || echo ">>> Missing in libs_map.yml: r$f"; \
+done
+
+for f in $(cat ./_data/releases_linux.yml | grep -e 'rpma_' | cut -d'r' -f2- | cut -d'.' -f1); do \
+        grep -q -e "r$f" /tmp/librpma.map || echo ">>> Not needed in _data/releases_linux.yml: r$f"; \
+done
+
+for f in $(cat ./_data/libs_map.yml | grep -v -e '- librpma:' | grep -e 'rpma_' | cut -d'r' -f2- | cut -d':' -f1); do \
+        grep -q -e "r$f" /tmp/librpma.map || echo ">>> Not needed in _data/libs_map.yml: r$f"; \
+done
+
+main
+git-rm-branch man-pages
+

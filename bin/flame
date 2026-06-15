@@ -1,0 +1,17 @@
+#!/bin/bash -ex
+
+NAME=$1
+shift
+
+SVG_OUT=flame-$NAME.svg
+rm -rf $SVG_OUT
+
+#PERF_BIN=~/kernel/linux/tools/perf/perf
+PERF_BIN=perf
+FLAME_DIR=~/work/FlameGraph
+
+$PERF_BIN record --call-graph dwarf -F 9999 -g $@
+
+rm -rf out.perf_folded
+$PERF_BIN script | $FLAME_DIR/stackcollapse-perf.pl > out.perf-folded
+$FLAME_DIR/flamegraph.pl out.perf-folded > $SVG_OUT

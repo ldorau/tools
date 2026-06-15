@@ -1,0 +1,8 @@
+#!/bin/bash
+
+echo "Date: $(date +"%b %e %H:%M:%S")" >> $HOME/mail-FAILS
+echo "Subject: $1" >> $HOME/mail-FAILS
+echo "To: $2" >> $HOME/mail-FAILS
+echo "$3" >> $HOME/mail-FAILS
+echo >> $HOME/mail-FAILS
+echo "mail FAILED !!!"

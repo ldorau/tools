@@ -1,0 +1,1 @@
+MEMCHECK=force-enable make -j8 CC=gcc EXTRA_CFLAGS=-DUSE_VALGRIND MEMCHECK=force-enable pcheck 2>&1 | tee log.txt

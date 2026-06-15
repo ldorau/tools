@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ "$1" == "" ]; then
+        echo "Usage: $0 <dictionary-file>"
+        exit 1
+fi
+
+DICTIONARY=$1
+
+if [ ! -f $DICTIONARY ]; then
+        echo "Error: cannot find the dictionary file: $DICTIONARY. Exiting..."
+        exit 1
+fi
+
+TEMP=./temp-$$
+
+cat $DICTIONARY | sort | uniq > $TEMP
+mv $TEMP $DICTIONARY
+rm -f $TEMP
+

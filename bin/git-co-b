@@ -1,0 +1,23 @@
+#!/bin/bash
+
+if [ "$1" == "-r" ]; then
+	REMOVE=1
+	shift
+else
+	REMOVE=0
+fi
+
+if [ "$1" == "" ]; then
+	echo "Notice: no branch name given - it will be taken from the last commit..."
+	NAME=$(git log -1 | head -n5 | tail -n1 | cut -c5-)
+	echo "Title of the last commit: $NAME"
+else
+	NAME="$*"
+fi
+
+CB=$(git-get-current-branch)
+BRANCH=$(echo "$NAME" | sed "s/[ :,/|]/_/g" | sed "s/[\*\'\"]//g" | sed "s/[()]//g" | sed "s/\[//g" | sed "s/\]//g" | sed "s/__/_/g")
+echo "$ git checkout -b $BRANCH"
+git checkout -b $BRANCH
+
+( [[ "$CB" == "temp-fix-"* ]] || [ $REMOVE -eq 1 ] ) && git-rm-branch $CB

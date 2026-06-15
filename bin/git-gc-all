@@ -1,0 +1,33 @@
+#!/bin/bash
+#
+# Run:
+# $ git gc
+# in all git repos in all subdirs of the given/current directory
+#
+
+WDIR="$1"
+if [ "$WDIR" != "" ]; then
+	if [ ! -d "$WDIR" ]; then
+		echo "Error: $WDIR is not an existing directory!"
+		exit 1
+	fi
+else
+	WDIR=$(pwd)
+fi
+
+cd $WDIR
+
+GIT_DIRS=$(find -name .git -type d)
+if [ "$GIT_DIRS" = "" ]; then
+	echo "Error: there are no git repos under the $WDIR directory!"
+	exit 1
+fi
+
+echo "Running 'git gc' in:"
+for dir in $GIT_DIRS; do
+	GDIR=$(dirname $dir)
+	echo " $WDIR/$GDIR ..."
+	cd $WDIR/$GDIR
+	git gc
+	echo
+done

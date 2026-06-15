@@ -1,0 +1,22 @@
+#!/bin/bash
+
+CMD="sudo -E pacman -S $*"
+
+echo $CMD
+eval $CMD
+if [ $? -ne 0 ]; then
+	echo "Standard installation failed. Trying to install from AUR ..."
+	arch-aur $*
+fi
+
+if [ -d ~/work ]; then
+	echo ":: Saving list of packages..."
+	ALL_PACKAGES=~/work/pacman-all-packages.txt
+	pacman -Q | cut -d' ' -f1 > $ALL_PACKAGES
+	echo "All packages have been written to $ALL_PACKAGES"
+	if [ -d ~/work/mytools/config/pacman-pkg ]; then
+		DIR=~/work/mytools/config/pacman-pkg/$(hostname | cut -d. -f1)/
+		mkdir -p $DIR
+		cp -vf $ALL_PACKAGES $DIR
+	fi
+fi

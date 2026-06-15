@@ -1,0 +1,28 @@
+#!/bin/bash
+
+GET_FILES=$HOME/work/mytools/bin/tools-get-files
+
+if [ ! -x $GET_FILES ]; then
+	echo "No $GET_FILES script found!"
+	exit 1
+fi
+
+cd $HOME/work/tools/bin
+git fetch --all
+git reset --hard origin/main
+
+for file in $($GET_FILES); do
+	MY_TOOLS=$HOME/work/mytools/bin/$file
+	PUB_TOOLS=$HOME/work/tools/bin/$file
+	if [ -f $MY_TOOLS ]; then
+		if [ -f $PUB_TOOLS ]; then
+			[ $MY_TOOLS -nt $PUB_TOOLS ] && cp -u -v $MY_TOOLS $PUB_TOOLS
+		else
+			cp -v $MY_TOOLS $PUB_TOOLS
+		fi
+	else
+		rm -f $PUB_TOOLS
+	fi
+done
+
+git-auto-push $HOME/work/tools main

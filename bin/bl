@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ "$1" = "" ]; then
+	echo "Usage: bl <ip> [min-block|0] [min-unblock|10]"
+	exit 1
+fi
+
+DIR=$(dirname $0)
+
+nohup $DIR/block.sh "$1" "$2" "$3" &

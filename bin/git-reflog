@@ -1,0 +1,17 @@
+#!/bin/bash
+
+HASHES=$(git reflog | cut -d' ' -f1 | xargs)
+for hash in $HASHES; do
+	if git log -1 -p $hash | grep -a -e "$1" > /dev/null; then
+		git log -1 -p $hash
+		echo
+		echo "==="
+		echo
+		git log -1 -p $hash | grep -a --color=auto -e "$1"
+		echo
+		echo -n "Next (y/n)? "
+		read -n1 resp
+		echo
+		[ "$resp" == "n" ] && break
+	fi
+done

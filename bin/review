@@ -1,0 +1,131 @@
+#!/bin/bash
+
+CB_ORG=$(git-get-current-branch)
+NEW_BRANCH=""
+TMP_BRANCH=""
+
+function run_command() {
+        COMMAND="$*"
+        echo
+        echo ">>> $COMMAND ..."
+        $COMMAND
+}
+
+function do_on_error() {
+	run_command git checkout $CB_ORG
+	[ "$NEW_BRANCH" != "" ] && run_command git branch -D $NEW_BRANCH
+	[ "$TMP_BRANCH" != "" ] && run_command git branch -D $TMP_BRANCH
+	exit 1
+}
+
+N_ORIGIN=$(git remote -v | grep -c -e "^origin")
+N_OTHERS=$(git remote -v | grep -v -e "^origin" | grep -c -e "$(git-get-current-repo)")
+
+if [ $N_ORIGIN -eq 2 -a $N_OTHERS -eq 0 ]; then
+	# origin only
+	BRANCH=$1
+
+	if [[ "$BRANCH" == "" ]]; then
+		echo "Usage: $0 <branch-to-pull-and-review>"
+		exit 0
+	fi
+
+	echo "BRANCH = $BRANCH"
+
+	NEW_BRANCH=review_$BRANCH
+
+	[ $(git diff | wc -l) -gt 0 ] && run_command git commit -a
+
+	if [ "$CB_ORG" = "$NEW_BRANCH" ]; then
+		TMP_BRANCH="temp-branch-$$"
+		run_command git checkout -b $TMP_BRANCH HEAD
+	fi
+
+	run_command git branch -D $NEW_BRANCH 2>/dev/null
+
+	run_command git fetch origin $BRANCH
+	if [ $? -ne 0 ]; then
+		echo Error: cannot fetch branch $BRANCH
+		do_on_error
+	fi
+
+	run_command git checkout -b $NEW_BRANCH FETCH_HEAD
+	if [ $? -ne 0 ]; then
+		echo Error: cannot git checkout -b $NEW_BRANCH FETCH_HEAD
+		do_on_error
+	fi
+
+	[ "$TMP_BRANCH" != "" ] && run_command git branch -D $TMP_BRANCH
+
+	echo
+	echo "The last commit:"
+	git log -1
+	echo
+	echo "Fetched the branch 'origin/$BRANCH' to branch: $NEW_BRANCH"
+	echo
+
+else
+	# more remotes present
+	ARG1=$1
+	REPO=$2
+
+	USER=`echo $ARG1 | cut -d: -f1`
+	BRANCH=`echo $ARG1 | cut -d: -f2`
+
+	if [[ "$USER" == "http" || "$USER" == "https" ]]; then
+		HOST=$(echo $ARG1 | cut -d'/' -f3)
+		if [ "$HOST" != "github.com" ]; then
+			echo "Error: host differs from 'github.com': $HOST"
+			exit 1
+		fi
+		TREE=$(echo $ARG1 | cut -d'/' -f6)
+		if [ "$TREE" != "tree" -a "$TREE" != "commits" ]; then
+			echo "Error: unknown address format (tree differs from 'tree': $TREE)"
+			exit 1
+		fi
+		USER=$(echo $ARG1 | cut -d'/' -f4)
+		REPO=$(echo $ARG1 | cut -d'/' -f5)
+		BRANCH=$(echo $ARG1 | cut -d'/' -f7)
+	fi
+
+	if [[ "$USER" == "" || "$USER" == "http" || "$USER" == "https" || "$BRANCH" == "" ]]; then
+		echo "Usage: $0 <user-name>:<branch-to-pull-and-review> [repo]"
+		exit 0
+	fi
+
+	[ "$REPO" == "" ] && REPO=$(git-get-current-repo)
+
+	echo "USER   = $USER"
+	echo "BRANCH = $BRANCH"
+	echo "REPO   = $REPO"
+
+	NEW_BRANCH=review_$USER_$BRANCH
+
+	run_command git commit -a
+	run_command git checkout $(git-get-default-branch)
+	run_command git branch   -D $NEW_BRANCH 2>/dev/null
+	run_command git checkout -b $NEW_BRANCH
+
+	run_command git fetch https://github.com/$USER/$REPO $BRANCH || run_command git fetch $USER $BRANCH
+	if [ $? -ne 0 ]; then
+		echo Error: cannot fetch branch $BRANCH from https://github.com/$USER/$REPO
+		do_on_error
+	fi
+
+	run_command git reset --hard FETCH_HEAD
+	if [ $? -ne 0 ]; then
+		echo Error: cannot reset to FETCH_HEAD
+		do_on_error
+	fi
+
+	CB_NEW=$(git-get-current-branch)
+	git checkout $CB_ORG >/dev/null
+	git checkout $CB_NEW >/dev/null
+
+	echo
+	echo "The last commit:"
+	git log -1
+	echo
+	echo "Fetched the branch '$BRANCH' of '$USER' to branch: $NEW_BRANCH"
+	echo
+fi

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ "$1" == "" ]; then
+        echo "ERROR: no branch name given"
+        exit 1;
+fi
+
+WD=$(dirname $0)
+. $WD/functions.sh
+
+BRANCH=$1
+
+run_command git branch -D $BRANCH
+run_command git branch $BRANCH
+run_command git checkout $BRANCH

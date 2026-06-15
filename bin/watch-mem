@@ -1,0 +1,32 @@
+#!/bin/bash
+
+LOG=/tmp/watch-mem
+
+[ "$1" == "-c" ] && shift && rm -f $LOG* && exit
+
+[ "$(id -u)" == "0" ] && SU=1 || SU=0
+
+echo "* free -m:" 
+free -m | tee -a $LOG-free.log;
+echo;
+~/bin/watch-mem-count-free;
+
+echo;
+echo "* ps:" 
+ps -eo pmem,vsize,rsz,pcpu,pid,cmd | cut -c-180 | sort -k 1 -nr | head -3 | tee -a $LOG-ps.log;
+echo;
+
+if [ $SU -eq 1 ]; then
+	echo "* slabinfo:"
+	cat /proc/slabinfo | sort -k 2 -nr > $LOG-tmp.log
+	head -n3 $LOG-tmp.log | tee -a $LOG-slab.log
+	grep -e "dentry" $LOG-tmp.log >> $LOG-dentry.log
+	~/bin/watch-mem-count-dentry
+	echo;
+fi
+
+if [ "$1" != "" ]; then
+	echo -n "* ps of $1: "
+	~/bin/watch-mem-count-ps-arg
+	ps -eo pmem,vsize,rsz,pcpu,pid,cmd | grep -e "$1" | grep -v -e grep -e watch -e bash -e echo | tee -a $LOG-ps-arg.log
+fi

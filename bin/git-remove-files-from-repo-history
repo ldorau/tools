@@ -1,0 +1,39 @@
+#!/bin/bash
+
+set -ex
+
+FILE=$1
+COMMAND=$2
+
+NAME=$(basename $0)
+TEMP=/tmp/$NAME
+rm -f ${TEMP}*
+COMMITS=${TEMP}-$$
+
+LAST=$(git log --pretty=format:%H -- $1 | tail -n1)
+[ "$LAST" = "" ] && exit 0
+git log --pretty=format:%H ${LAST}..HEAD > $COMMITS
+
+git-temp $LAST
+# run the script
+$COMMAND
+git add -A
+git commit -a --amend -C $LAST
+
+echo "=============================================================="
+
+while true; do
+	LAST=$(tail -n1 $COMMITS)
+	[ "$LAST" = "" ] && exit 0
+	sed -i '$d' $COMMITS # removes the last line from the file
+
+	if ! git cherry-pick $LAST; then
+		# run the script
+		$COMMAND
+		git add -A
+		git status
+		export GIT_EDITOR="true"
+		GIT_EDITOR=true git cherry-pick --continue
+	fi || true
+	echo "=============================================================="
+done

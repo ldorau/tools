@@ -1,0 +1,22 @@
+#!/bin/bash
+
+LOG=$1
+[ ! -f $LOG ] && exit 1
+
+TEMP=$(mktemp)
+TEMP2=$(mktemp)
+
+cp $LOG $TEMP
+
+cat $TEMP | sed "s/<[^<>]*>/{}/g" > $TEMP2
+
+while ! diff $TEMP $TEMP2 >/dev/null 2>&1; do
+	mv $TEMP2 $TEMP
+	cat $TEMP | sed "s/<[^<>]*>/{}/g" > $TEMP2
+done
+
+cat $TEMP | less
+
+[ -n $2 ] && cp -vf $TEMP $LOG
+
+rm -f $TEMP $TEMP2

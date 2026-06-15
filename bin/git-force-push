@@ -1,0 +1,22 @@
+#!/bin/bash
+
+ORIGIN=$(git-get-origin)
+
+WD=$(dirname $0)
+
+[ $1 ] && cd $1
+
+[ ! -d .git ] && echo "Not a main git directory !" && exit 1
+
+BR=$($WD/git-get-current-branch)
+git fetch $ORIGIN $BR > /dev/null 2>&1
+git reset --hard $ORIGIN/$BR > /dev/null 2>&1
+
+if ! git status | grep "nothing to commit, working tree clean" >/dev/null 2>&1; then
+	if git status | grep "Untracked files" >/dev/null 2>&1; then
+		git add -A
+	fi
+	git commit -a -m "AUTO-PUSH" && true
+	$WD/git-push-current-branch -f
+fi
+

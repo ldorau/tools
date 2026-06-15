@@ -1,0 +1,190 @@
+#!/bin/bash
+
+# set proxy if needed
+proxy-check
+
+ARG1=$1
+ARG2=$2
+
+DEFAULT_BRANCH=$(git-get-default-branch)
+ORIG_BRANCH=$(git-get-current-branch)
+TMPF=$(mktemp)
+
+ORIGIN=$(git-get-origin)
+UPSTREAM=$(git-get-upstream)
+
+function run_command() {
+        COMMAND="$*"
+        echo "$ $COMMAND ..."
+        eval $COMMAND
+	RV=$?
+	return $RV
+}
+
+function branch_exists() {
+	git log -1 $1 >/dev/null 2>&1
+}
+
+function get_last_commit() {
+	git log -1 | head -n1 | cut -d" " -f2
+}
+
+function get_remote() {
+	FILE=.git/default-branches
+	BR=$1
+	if [ -f $FILE ]; then
+		REMOTE=$(cat $FILE | grep -e "^$BR " | cut -d" " -f2)
+		[ "$REMOTE" != "" ] && echo $REMOTE && return 0
+	fi
+	if branch_exists remotes/$UPSTREAM/$BR; then
+		echo "$UPSTREAM/$BR"
+	elif branch_exists remotes/$ORIGIN/$BR; then
+		echo "$ORIGIN/$BR"
+	else
+		echo "none"
+		return 1
+	fi
+}
+
+function update_branch() {
+	BR=$1
+
+	REMOTE=$(get_remote $BR)
+	[ "$REMOTE" == "none" ] && return 1
+
+	echo
+	echo
+	echo "*** Updating branch \"$BR\" from \"$REMOTE\" ..."
+	run_command git clean -f -d
+	run_command git checkout $BR 2>/dev/null || run_command git checkout -b $BR $REMOTE
+	local OLD_COMMIT=$(get_last_commit)
+	local RMT=$(echo $REMOTE | cut -d'/' -f1)
+	local RBR=$(echo $REMOTE | cut -d'/' -f2)
+	run_command git pull $RMT $RBR --tags --force
+	run_command git reset --hard $REMOTE
+	run_command git-push-secure $ORIGIN -f HEAD:$BR
+	local NEW_COMMIT=$(get_last_commit)
+	echo "The last commit on branch <$BR>:"
+	git log -1
+	echo
+	if [ "$NEW_COMMIT" != "$OLD_COMMIT" ]; then
+		echo Updated.
+	else
+		echo Already up-to-date.
+	fi
+}
+
+function update_branches() {
+	BRS=$*
+	for branch in $BRS; do
+		update_branch $branch
+	done
+}
+
+function hide_branch() {
+	[ "$1" == "" ] && return
+	branch_exists $1 && run_command git branch -D $1
+        branch_exists remotes/$ORIGIN/$1 && run_command git branch -r -d $ORIGIN/$1
+	branch_exists remotes/$UPSTREAM/$1 && run_command git branch -r -d $UPSTREAM/$1
+}
+
+#################################################################
+
+run_command git fetch $ORIGIN --tags --force
+
+[ "$ARG1" == "" ] && exit 0
+
+case $ARG1 in
+	def|up|all|stable|gh)
+		;;
+	*)
+		echo "Error: unknown option: $ARG1"
+		exit 1
+		;;
+esac
+
+if [ "$ARG2" == "" ]; then
+	BRANCH=$(git-get-default-branch)
+else
+	BRANCH=$ARG2
+fi
+
+EXISTS=`git branch | grep -e $BRANCH`
+if [ "$EXISTS" == "" ]; then
+	echo "Error: branch <$BRANCH> does not exist"
+	exit 1
+fi
+
+if ! git status | grep -e "nothing to commit, working tree clean" >/dev/null 2>&1; then
+	git commit -a || (echo "ERROR: git commit -a FAILED" && exit 1)
+fi
+
+if [ "$(git remote | grep -e $UPSTREAM)" == "" ]; then
+	echo
+	echo "Notice: no $UPSTREAM found !"
+	run_command git pull $ORIGIN $BRANCH --tags --force
+	exit 0
+fi
+
+UP_BRANCHES=$(git branch -a | grep -e "remotes/$UPSTREAM" | grep -e "man-pages" -e "stable-" -e "devel-" \
+	| grep -v -e "-man-pages" -e "-stable" -e "-devel" | cut -d'/' -f3 | xargs)
+
+case $ARG1 in
+all)
+	git remote | grep -q -e $UPSTREAM && run_command git fetch $UPSTREAM --tags --force
+	update_branches $UP_BRANCHES
+	;;
+def)
+	DEF_BRANCHES=$(git-get-default-branches)
+	update_branches $DEF_BRANCHES
+	;;
+*)
+	PATTERNS="-e devel-"
+	case $ARG1 in
+	gh)
+		PATTERNS="$PATTERNS -e man-pages"
+		;;
+	stable)
+		PATTERNS="$PATTERNS -e stable-"
+		;;
+	esac
+
+	FETCH_BRANCHES=$(git branch | grep $PATTERNS | sed 's/* //g' | xargs)
+
+	for upbr in $UP_BRANCHES; do
+		git branch | grep -q -e $upbr || continue
+		git log -1 $upbr >/dev/null 2>&1 || continue
+		[ "$upbr" == "$DEFAULT_BRANCH" -o "$upbr" == "$BRANCH" ] && continue
+		HIDE=1
+		for fbr in $FETCH_BRANCHES; do
+			if [ "$fbr" == "$upbr" ]; then
+				HIDE=0
+				break
+			fi
+		done
+		[ $HIDE -eq 1 ] && hide_branch $upbr
+	done
+
+	for fbr in $FETCH_BRANCHES; do
+		# update only stable-[0-9].[0-9] devel-[0-9].[0-9] and man-pages branches
+		REST=$(echo $fbr | sed 's/stable-[0-9].[0-9]//g' | sed 's/devel-[0-9].[0-9]//g' | sed 's/man-pages//g')
+		[ "$REST" != "" ] && continue
+		update_branch $fbr
+	done
+
+	update_branch $BRANCH
+	;;
+esac
+
+[ "$(uname)" == "Linux" ] && git-rm-merged-branches
+
+if [ "$(git-get-current-branch)" != "$ORIG_BRANCH" ]; then
+	echo
+	echo "*** Reverting the original branch $ORIG_BRANCH ..."
+	run_command git clean -f -d
+	run_command git checkout "$ORIG_BRANCH"
+	echo "The last commit on branch <$ORIG_BRANCH>:"
+	git log -1
+fi
+
+echo

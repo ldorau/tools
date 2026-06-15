@@ -1,0 +1,3 @@
+#!/bin/bash
+
+sudo -E /bin/bash -c "if ! wget -q --spider -T1 www.google.com; then source $HOME/work/mytools/bin/proxy-toggle-all.sh; fi; $*"

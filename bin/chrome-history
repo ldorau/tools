@@ -1,0 +1,37 @@
+#!/bin/bash
+
+set -ex
+
+function sudo_cmd() {
+	echo koza | sudo -S $*
+}
+
+SQL_CMD="SELECT datetime(last_visit_time/1000000-11644473600,'unixepoch','localtime'), title, url FROM urls ORDER BY last_visit_time DESC;"
+
+# default file
+FILE="/home/dzieci/.config/google-chrome/Default/History"
+TMP=/tmp/chrome_history_copy_$(whoami)
+
+if [ "$(which sqlite3)" = "" ]; then
+	echo "Error: sqlite3 not found"
+	exit 1
+fi
+
+if [ ! -f $FILE ]; then
+	N=$(sudo_cmd find /home/dzieci/.config -name History | grep -v opera | wc -l)
+	if [ $N -eq 1 ]; then
+		FILE=$(sudo_cmd find $HOME/.config -name History | grep -v opera)
+	else
+		echo "Error: there are many History files:"
+		find /home/dzieci/.config -name History
+		exit 1
+	fi
+fi
+
+sudo_cmd cp "$FILE" $TMP
+FILE=$TMP
+sudo_cmd chown $(whoami):$(whoami) "$FILE"
+
+sqlite3 $FILE "$SQL_CMD" > historia_chrome.txt
+echo "$ cat ./historia_chrome.txt"
+cat ./historia_chrome.txt

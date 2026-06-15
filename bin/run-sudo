@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "# sudo bash -c \"ulimit -l 10240 && ulimit -n 10240 && $*\""
+sudo bash -c "ulimit -l 10240 && ulimit -n 10240 && $*"

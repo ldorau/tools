@@ -1,0 +1,47 @@
+#!/bin/bash -e
+
+if [ "$1" == "stop" ]; then
+	STOP=yes
+	shift
+fi
+
+OP=""
+
+if git status | grep -q -e "You are currently rebasing"; then
+	OP="REBASE"
+elif git status | grep -q -e "You are currently cherry-picking"; then
+	OP="CHERRY_PICK"
+elif git status | grep -q -e '(use "git merge --abort" to abort the merge)'; then
+	OP="MERGE"
+else
+	echo "Not rebasing nor cherry-picking nor merging, so exiting"
+	exit 1
+fi
+
+for file in $(git status | grep -e "modified:" -e "both" | cut -d: -f2-); do
+
+	echo "$ git-resolve-conflicts $file $1"
+	git-resolve-conflicts $file $1
+
+	echo "$ git add $file"
+	git add $file
+done
+
+[ "$STOP" == "yes" ] && exit 0
+
+case $OP in
+"REBASE")
+	echo "git rebase --continue"
+	git rebase --continue
+	;;
+"CHERRY_PICK")
+	echo "$ git cherry-pick --continue"
+	git cherry-pick --continue
+	;;
+"MERGE")
+	echo "$ git commit -a"
+	git commit -a
+	;;
+esac
+
+git status

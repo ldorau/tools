@@ -1,0 +1,133 @@
+#!/bin/bash
+
+ORIGIN=$(git-get-origin)
+UPSTREAM=$(git-get-upstream)
+
+DEFAULT_BRANCH=$(git-get-default-branch)
+EXCLUSIONS="$(git-get-default-branches | xargs)"
+
+function in_exclusions() {
+	local YES=0
+	local NO=1
+	[ "$EXCLUSIONS" == "" ] && return $NO
+	BRANCH=$1
+	for br in $EXCLUSIONS; do
+		[ "$br" == "$BRANCH" ] && return $YES
+	done
+	return $NO
+}
+
+function verify_branch() {
+	# remove stable-[0-9].[0-9], devel-[0-9].[0-9] and man-pages
+	REST=$(echo $1 \
+		| sed "s/$DEFAULT_BRANCH//g" \
+		| sed 's/man-pages//g' \
+		| sed 's/stable-[0-9].[0-9]//g' \
+		| sed 's/devel-[0-9].[0-9]//g' \
+		)
+	echo $REST
+}
+
+function branch_exists() {
+	git log -1 $1 >/dev/null 2>&1
+}
+
+function get_commit() {
+	git log -1 --pretty=format:%H $1 --
+}
+
+ALL_COMMITS=/tmp/all-commits-$$
+rm -f $ALL_COMMITS
+touch $ALL_COMMITS
+
+for b in $(git-get-default-branches); do
+	branch_exists $ORIGIN/$b && git log --pretty=format:%H $ORIGIN/$b -- >> $ALL_COMMITS
+done
+
+REMOTEB=$(git branch -a | grep "remotes/$ORIGIN/" | grep -v -e "HEAD" -e " -> ")
+# echo "Remote branches:"
+# echo "$REMOTEB"
+for b in $REMOTEB; do
+	# echo "Checking remote branch: $b"
+
+	br=$(echo $b | cut -d/ -f3-)
+	rest=$(verify_branch $br)
+	[ "$rest" == "" ] && continue
+
+	commit_r=$(get_commit $b)
+	grep $commit_r $ALL_COMMITS > /dev/null 2>&1
+	if [ $? -eq 0 ]; then
+		b=$(echo $b | cut -d/ -f3-)
+		in_exclusions $b && continue
+
+		echo Removing remote branch remotes/$ORIGIN/$b ...
+
+		git-push-secure $ORIGIN :$b
+		echo
+
+		is_local=`git branch | grep $b`
+		if [ "$is_local" != "" ]; then
+			in_exclusions $b && continue
+			# echo "Checking local branch: $b"
+			commit_l=$(get_commit $b)
+			if [ "commit_l" == "commit_r" ]; then
+				remove=0
+			else
+				grep $commit_l $ALL_COMMITS 2>&1 > /dev/null
+				remove=$?
+			fi
+
+			if [ $remove -eq 0 ]; then
+				echo Removing local branch $b ...
+				git branch -D $b
+				echo
+			fi
+		fi
+	fi
+done
+
+LOCALB=$(git branch | sed 's/\*/ /g' | grep -v -e "$DEFAULT_BRANCH" -e "man-pages" -e "devel" -e "HEAD" -e "stable-" -e "devel-" -e " -> ")
+# echo "Local branches:"
+# echo "$LOCALB"
+for b in $LOCALB; do
+	# echo "Checking branch: $b"
+	is_local=`git branch | grep $b`
+	[ "$is_local" == "" ] && continue
+
+	rest=$(verify_branch $b)
+	[ "$rest" == "" ] && continue
+
+	in_exclusions $b && continue
+
+	commit=$(get_commit $b)
+	grep $commit $ALL_COMMITS 2>&1 > /dev/null
+	if [ $? -eq 0 ]; then
+		echo Removing local branch $b ...
+		git branch -D $b
+		echo
+	fi
+done
+
+# remove all "remotes/$UPSTREAM/" branches
+REMOTEB=$(git branch -a | grep "remotes/$UPSTREAM/" | grep -v -e "HEAD" -e " -> ")
+for b in $REMOTEB; do
+	br=$(echo $b | cut -d/ -f3-)
+	branch_exists $br && continue
+	branch_exists $ORIGIN/$br && continue
+	git branch -r -d $UPSTREAM/$br
+done
+
+# remove all remote and not ($ORIGIN or $UPSTREAM) branches
+REMOTEB=$(git branch -a | grep "remotes/" | grep -v -e "remotes/$ORIGIN/" -e "remotes/$UPSTREAM/" -e "HEAD" -e " -> ")
+for b in $REMOTEB; do
+	br=$(echo $b | cut -d/ -f3-)
+	remote=$(echo $b | cut -d/ -f2)
+	if branch_exists $br; then
+		commit_local=$(get_commit $br)
+		commit_remote=$(get_commit $remote/$br)
+		[ "$commit_local" == "$commit_remote" ] && continue
+	fi
+	git branch -r -d $remote/$br
+done
+
+rm -f $ALL_COMMITS

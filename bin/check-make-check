@@ -1,0 +1,9 @@
+#!/bin/bash
+
+sudo mount -t tmpfs -o size=4g tmpfs /tmpfs
+mkdir /tmpfs/local
+mkdir /tmpfs/pmem
+mkdir /tmpfs/non-pmem
+make -j all check
+sudo umount /tmpfs
+

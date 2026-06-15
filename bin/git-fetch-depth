@@ -1,0 +1,29 @@
+#!/bin/bash
+
+BRANCH=$1
+DEPTH=$2
+
+ORIGIN=$(git-get-origin)
+UPSTREAM=$(git-get-upstream)
+
+if [ "$BRANCH" = "" ]; then
+        echo "Error: no branch given"
+        echo "Usage: $0 <branch> [fetch_depth=2]"
+	exit 1
+fi
+
+[ "$DEPTH" = "" ] && DEPTH=2
+
+set -ex
+
+git checkout $BRANCH || git checkout -b $BRANCH
+
+if [ "$UPSTREAM" != "" ] && git fetch --depth=$DEPTH $UPSTREAM $BRANCH; then
+	git reset --hard FETCH_HEAD
+	git-push-current-branch -f
+else
+	git fetch --depth=$DEPTH $ORIGIN $BRANCH
+	git reset --hard FETCH_HEAD
+fi
+
+git log

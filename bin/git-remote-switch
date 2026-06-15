@@ -1,0 +1,47 @@
+#!/bin/bash
+
+case $1 in
+	https)
+		echo "Switching to HTTPS..."
+		PATTERN="git@github.com"
+		;;
+	ssh)
+		echo "Switching to SSH..."
+		PATTERN="https://github.com"
+		;;
+	*)
+	        echo "Usage: $(basename $0) <https|ssh>"
+	        exit 0;
+		;;
+esac
+
+REMOTES=$(git remote -v | grep -e "$PATTERN" | cut -f1 | sort | uniq | xargs)
+# echo REMOTES=$REMOTES
+if [ "$REMOTES" == "" ]; then
+	echo "No $PATTERN remotes found!"
+	exit 1
+fi
+
+echo
+echo "*** Current configuration:"
+git remote -v
+echo
+
+for remote in $REMOTES; do
+	URL=$(git remote -v | grep -e "$PATTERN" | grep -e "$remote" | grep -e "(fetch)" | cut -f2 | cut -d' ' -f1 | sort | uniq | xargs)
+	# echo $remote: URL=$URL
+	case $1 in
+		https)
+			NEW_URL=$(echo $URL | sed 's/git@github.com:/https:\/\/github.com\//g')
+			;;
+		ssh)
+			NEW_URL=$(echo $URL | sed 's/https:\/\/github.com\//git@github.com:/g')
+			;;
+	esac
+	# echo NEW_URL=$NEW_URL
+	git remote rm $remote
+	git remote add $remote $NEW_URL
+done
+
+echo "*** New configuration:"
+git remote -v

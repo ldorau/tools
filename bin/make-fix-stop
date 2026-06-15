@@ -1,0 +1,5 @@
+#!/bin/bash
+
+STOP_FILE=/tmp/temp-stop-make-fix
+
+touch $STOP_FILE

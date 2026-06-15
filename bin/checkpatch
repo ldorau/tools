@@ -1,0 +1,2 @@
+/mnt/arch/archive/repos/kernel-torvalds/scripts/checkpatch.pl $1
+

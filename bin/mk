@@ -1,0 +1,10 @@
+#!/bin/bash -e
+
+if [ "$1" == "-c" ]; then
+	shift
+	make -j clobber
+fi
+
+make -j12 EXTRA_CFLAGS="-DUSE_VALGRIND -DUSE_LIBUNWIND $*" test \
+	&& echo "Done   (make -j12 EXTRA_CFLAGS="-DUSE_VALGRIND -DUSE_LIBUNWIND $*" test)" \
+	|| echo "FAILED (make -j12 EXTRA_CFLAGS="-DUSE_VALGRIND -DUSE_LIBUNWIND $*" test)"

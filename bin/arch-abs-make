@@ -1,0 +1,23 @@
+#!/bin/bash -e
+
+mkdir -p ~/abs
+
+DIR=~/abs/$1
+
+[ ! -d $DIR ] && \
+	echo "Usage: $(basename $0) <package> [-f]" && \
+	echo "Error: directory $DIR does not exist!" && \
+	exit 1
+
+cd $DIR/trunk
+
+if [ "$2" != "-f" ]; then
+	makepkg -si --nocheck
+	if [ $? -ne 0 ]; then
+		echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+		rm -rf $(find . -name build)
+		makepkg -si --noconfirm --skippgpcheck --nocheck
+	fi
+else
+	makepkg -si --noconfirm --skippgpcheck --nocheck --skipinteg --skipchecksums
+fi

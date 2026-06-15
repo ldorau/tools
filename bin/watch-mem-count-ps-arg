@@ -1,0 +1,12 @@
+#!/bin/bash
+
+LOG=/tmp/watch-mem
+
+MAX_VSIZE=$(cat $LOG-ps-arg.log | grep -v -e bash -e echo -e watch | sort -k 2 -nr | head -n1 | cut -d' ' -f3)
+MAX_RSIZE=$(cat $LOG-ps-arg.log | grep -v -e bash -e echo -e watch | sort -k 3 -nr | head -n1 | cut -d' ' -f4)
+
+[ "$MAX_VSIZE" == "" -o "$MAX_RSIZE" == "" ] && echo "(no such process so far)" && exit 0
+
+[ "$1" == "-k" ] \
+	&& echo "max vsize ${MAX_VSIZE} KiB | max rsize ${MAX_RSIZE} KiB" \
+	|| echo "max vsize $((${MAX_VSIZE}/1024)) MiB | max rsize $((${MAX_RSIZE}/1024)) MiB"

@@ -1,0 +1,52 @@
+#!/bin/bash
+#
+# vgrp '<<<<<<< HEAD'
+#
+
+STOP_FILE=/tmp/temp-stop-vgrp
+rm -f $STOP_FILE
+
+OP=""
+
+if git status | grep -q -e "You are currently rebasing"; then
+	OP="REBASE"
+elif git status | grep -q -e "You are currently cherry-picking"; then
+	OP="CHERRY_PICK"
+elif git status | grep -q -e '(use "git merge --abort" to abort the merge)'; then
+	OP="MERGE"
+else
+	echo "Not rebasing nor cherry-picking nor merging, so exiting"
+	exit 1
+fi
+
+for file in $(git status | grep -e "modified:" -e "both" | cut -d: -f2-); do
+	MATCHES="$(grep -nH -e "<<<<<<< HEAD" $file | cut -d: -f1-2 | xargs)"
+	for match in $MATCHES; do
+		v $match
+		if [ -f $STOP_FILE ]; then
+			echo "Stopped!"
+			rm -f $STOP_FILE
+			exit 0
+		fi
+	done
+
+	echo "$ git add $file"
+	git add $file
+done
+
+case $OP in
+"REBASE")
+	echo "git rebase --continue"
+	git rebase --continue
+	;;
+"CHERRY_PICK")
+	echo "$ git cherry-pick --continue"
+	git cherry-pick --continue
+	;;
+"MERGE")
+	echo "$ git commit -a"
+	git commit -a
+	;;
+esac
+
+git status

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+STOP_FILE=/tmp/temp-stop-make-fix
+rm -f $STOP_FILE
+LINES=$(make $1 2>&1 | grep -E -e '$HOME/work.+:[0-9]+' -e 'wrong copyright date' -e 'No copyright years' | cut -d: -f1-2)
+
+for f in $LINES; do
+	FILE=$(echo $f | cut -d: -f1)
+	[ -f $FILE ] && v $f || v ../$f
+	if [ -f $STOP_FILE ]; then
+		echo "Stopped!"
+		rm -f $STOP_FILE
+		exit 0
+	fi
+done

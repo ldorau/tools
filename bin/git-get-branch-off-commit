@@ -1,0 +1,42 @@
+#!/bin/bash
+#
+# ERROR CODES:
+# 0 - Success
+# 1 - Not enough parameters
+# 2 - Branch-off commit not found
+# 3 - Command failed
+#
+
+DEFAULT_BRANCH=$(git-get-default-branch)
+FILE_COMMITS_MASTER="/tmp/commits-$DEFAULT_BRANCH-$$"
+
+function check_result()
+{
+        if [ `echo $?` -ne 0 ]; then
+                exit 3 # command failed
+        fi
+}
+
+COMMIT_OR_BRANCH=$1
+if [ "$COMMIT_OR_BRANCH" == "" ]; then
+	echo "Usage: $0 <commit-hash-OR-branch>"
+	exit 1 # Not enough parameters
+fi
+
+COMMITS=`git log --pretty=%H $COMMIT_OR_BRANCH`
+check_result
+
+git log --pretty=%H $DEFAULT_BRANCH > $FILE_COMMITS_MASTER
+check_result
+
+for commit in $COMMITS; do
+	grep $commit $FILE_COMMITS_MASTER > /dev/null 2>&1
+	if [ `echo $?` -eq 0 ]; then
+		echo $commit
+		rm -f $FILE_COMMITS_MASTER
+		exit 0
+	fi
+done
+
+rm -f $FILE_COMMITS_MASTER
+exit 2 # branch-off commit not found

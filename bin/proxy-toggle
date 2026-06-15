@@ -1,0 +1,6 @@
+#!/bin/bash
+
+[ "$(whoami)" = "pi" ] && exit 0
+
+WD=$(dirname $0)
+source $WD/proxy-toggle-all.sh $1

@@ -1,0 +1,45 @@
+#!/bin/bash -e
+
+TMP=/tmp/out
+
+mkdir -p ~/aur
+cd ~/aur
+#[ -d "$1" -a "$2" == "-f" ] && rm -rf ./$1
+
+export MAKEFLAGS="-j$(( $(nproc) - 2 ))"
+
+function remove_build() {
+	DIR=$(find /mnt/files/repos/arch-linux/abs/makepkg/$1/ -name build 2>/dev/null)
+	if [ "$DIR" != "" ]; then
+		echo "$ rm -rf $DIR"
+		rm -rf $DIR
+	fi
+}
+
+if [ ! -d "$1" ]; then
+	git clone https://aur.archlinux.org/$1.git
+	if [ -d "$(pwd)/$1" -a ! -f "$(pwd)/$1/PKGBUILD" ]; then
+		echo -n "Removing empty repo and exiting... "
+		rm -rf $(pwd)/$1
+		echo "done."
+		exit 0
+	fi
+	cd $1
+else
+	cd $1
+	git pull | tee $TMP
+	[ "$2" != "-f" -a "$(cat $TMP)" == "Already up to date." ] && exit 0
+fi
+
+if [ "$2" != "-f" ]; then
+	set +e
+	makepkg -si
+	if [ $? -ne 0 ]; then
+		echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+		remove_build
+		makepkg -si --noconfirm --skippgpcheck
+	fi
+else
+	remove_build
+	makepkg -si --noconfirm --skippgpcheck
+fi

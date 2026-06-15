@@ -1,0 +1,11 @@
+#!/bin/bash
+
+DIR=$(dirname $0)
+
+for ip in $*; do
+	NRS=$(sudo ufw status numbered | grep -e "$ip" | grep -e "DENY IN" | cut -d']' -f1 | cut -d'[' -f2 | sort -n -r | xargs)
+	for nr in $NRS; do
+		IP_MATCHES=$(echo n | sudo ufw delete $nr 2>&1 | grep -q -c -e "deny from $ip")
+		[ $IP_MATCHES -ge 1 ] && echo y | sudo ufw delete $nr
+	done
+done

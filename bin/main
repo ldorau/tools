@@ -1,0 +1,12 @@
+#!/bin/bash
+
+ORIGIN=$(git-get-origin)
+BRANCH=$(git-get-default-branch)
+
+[ "$BRANCH" == "unknown" ] && BRANCH=$(git-get-current-branch)
+
+[ "$(git-get-current-branch)" == "$BRANCH" ] && exit 0
+
+git commit -a
+git checkout $BRANCH
+git reset --hard $ORIGIN/$BRANCH

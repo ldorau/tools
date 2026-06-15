@@ -1,0 +1,18 @@
+#!/bin/bash
+
+ALL_VER=~/pkgs-all-ver.txt
+ALL=~/pkgs-all.txt
+FAILED=~/pkgs-all-failed.txt
+REINS=~/pkgs-all-reinstalled.txt
+
+rm -f $FAILED $REINS
+
+pacman -Q | grep -v -e pacman -e linux -e clang > $ALL_VER
+cat $ALL_VER | cut -d' ' -f1 > $ALL
+
+for pkg in $(cat $ALL); do
+	echo "Reinstalling $pkg ..."
+	sudo -E pacman -S --noconfirm $pkg
+	[ $? -ne 0 ] && echo $pkg >> $FAILED || echo $pkg >> $REINS
+done
+

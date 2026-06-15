@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [ ! -f $1 ]; then
+	echo "Error: iso file $1 does not exist!"
+	exit 1
+fi
+
+if [ ! -b /dev/sd$2 ]; then
+	echo "Error: block device /dev/sd$2 does not exist!"
+	exit 1
+fi
+
+if mount | grep -e "/dev/sd$2"; then
+	echo "Error: block device /dev/sd$2 is mounted!"
+	exit 1
+fi
+
+echo "This will run the following command:"
+echo "$ sudo dd bs=4M if=$1 of=/dev/sd$2 status=progress oflag=sync"
+echo -n "Do you want to continue (y/n)? "
+read -n1 resp
+echo
+echo
+if [ "$resp" == "y" ]; then
+fi
+echo "will start in 3 seconds ..."
+sleep 3
+sudo dd bs=4M if=$1 of=/dev/sd$2 status=progress oflag=sync
+

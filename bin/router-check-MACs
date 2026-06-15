@@ -1,0 +1,20 @@
+#!/bin/bash
+
+declare -A MACS
+
+cat ~/work/MAC.txt | \
+while IFS='' read -r line || [[ -n "$line" ]]; do
+	MAC=$(echo $line | cut -d' ' -f1 | sed 's/:/-/g' | sed 's/-/x/g')
+	COMMENT=$(echo $line | cut -d' ' -f2-)
+	echo "MACS[$MAC]=$COMMENT"
+	export MACS[$MAC]="$COMMENT"
+done
+
+cat ~/Downloads/Syslog.txt | grep from | cut -d' ' -f17 | sort | uniq
+
+ALL=$(cat ~/Downloads/Syslog.txt | grep from | cut -d' ' -f17 | sort | uniq | sed 's/:/-/g' | cut -c1-17 | xargs)
+for mac in $ALL; do
+	macx=$(echo $mac | sed 's/-/x/g')
+	echo ">>$mac<< >>${MACS[${macx}]}<<"
+	echo
+done

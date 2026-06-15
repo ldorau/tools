@@ -1,0 +1,11 @@
+#!/bin/bash
+
+PATTERN="<none>"
+[ "$1" != "" ] && PATTERN=$1
+
+IMGS=$(sudo docker images -a | grep -e "$PATTERN" | awk '{print $3}' | xargs)
+if [ "$IMGS" != "" ]; then
+	echo "Removing images: $IMGS"
+	echo -n "Removed: "
+	sudo docker rmi $IMGS
+fi

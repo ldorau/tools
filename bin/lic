@@ -1,0 +1,9 @@
+#!/bin/bash
+
+DIR=$1
+[ "$DIR" == "" ] && DIR="."
+
+echo "Checking licenses in $DIR ..."
+echo "$ make -C $DIR check-license 2>&1 | grep 'error: wrong copyright date' | cut -d: -f1-2"
+vv "make -C $DIR check-license 2>&1 | grep 'error: wrong copyright date' | cut -d: -f1-2"
+

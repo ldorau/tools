@@ -1,0 +1,103 @@
+#!/bin/bash
+
+RV=0
+
+# echo "Gathering files to be checked..."
+FILES=`git ls-tree -r --name-only HEAD | \
+	grep    -E -e 'README' -e 'Makefile*' -e 'TEST*' -e '*\.[13].md' | \
+	grep -v -E -e 'src/jemalloc' -e 'lib[pv]mem\.3' | \
+	xargs`
+
+if [ "$FILES" != "" ]; then
+	echo
+	echo "Looking for forbidden abbreviations..."
+	grep -n -H -P 'FIXME|TODO|TBD' $FILES
+	if [ $? -eq 0 ]; then
+		echo "ERROR: FIXME, TODO nor TBD are not allowed, use XXX instead"
+		RV=1
+	fi
+
+	echo
+	echo "Looking for unresolved merge conflicts..."
+	grep -n -H -P '<<<<<< HEAD' $FILES
+	if [ $? -eq 0 ]; then
+		echo "ERROR: unresolved merge conflict"
+		RV=1
+	fi
+fi
+
+# check manual files
+TMP=/tmp/$$-$$
+FILES=`find ./doc/ -type f -name '*.[13]' -print | xargs`
+if [ "$FILES" != "" ]; then
+	echo
+	echo "Looking for spaces after '*'..."
+	grep -n -H -P '[^\"]\ \*\ \"' $FILES
+	if [ $? -eq 0 ]; then
+		echo "ERROR: Space after '*'"
+		RV=1
+	fi
+	echo
+	echo "Looking for spaces before ','..."
+	grep -n -H -P '^\.\w{2}\ .+[^)"\ ],$' $FILES
+	if [ $? -eq 0 ]; then
+		echo "ERROR: No space before ','"
+		RV=1
+	fi
+	echo
+	echo "Looking for '\" )'..."
+	grep -n -H -P '\"\ \)$' $FILES
+	if [ $? -eq 0 ]; then
+		echo "ERROR: '\" )'"
+		RV=1
+	fi
+fi
+
+# check *.match files
+FILES=`find . -path ./src/jemalloc -prune -o -type f -name '*.match' -print | xargs`
+
+if [ "$FILES" != "" ]; then
+#	echo
+#	echo "Looking for ./testname\$(*)..."
+#	grep -n -H -P './\S+\$\(\*\)' $FILES
+#	if [ $? -eq 0 ]; then
+#		echo 'ERROR: wrong testname token: ./testname$(*)'
+#		RV=1
+#	fi
+	echo
+	echo "Looking for \$(*)/test..."
+	grep -n -H -P '\$\(\*\)/test' $FILES
+	if [ $? -eq 0 ]; then
+		echo 'ERROR: wrong path token: $(*)/test'
+		RV=1
+	fi
+	echo
+	echo "Looking for ./test..."
+	grep -n -H -P '\./test' $FILES
+	if [ $? -eq 0 ]; then
+		echo 'ERROR: wrong path ./test'
+		RV=1
+	fi
+	# echo
+	# echo "Looking for \$(*) \(*)"
+	#grep -n -H -P '\$\(\*\)\s*\$\(\*\)' $FILES
+	#if [ $? -eq 0 ]; then
+		#echo 'ERROR: $(*) $(*)'
+		#RV=1
+	#fi
+fi
+
+# echo
+# echo "Looking for testfile in *.c files..."
+# RESULT=`find-text "*.c" "testfile"`
+# if [ "$RESULT" != "" ]; then
+#	echo "$RESULT"
+#        echo 'ERROR: testfile in *.c files'
+#        RV=1
+# fi
+
+# check if error found
+if [ $RV -ge 1 ]; then
+	exit 1
+fi
+

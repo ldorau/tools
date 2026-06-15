@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for wav in $(ls -1 *.wav); do
+	NAME=$(echo $wav | cut -d'.' -f1)
+	lame $wav $NAME.mp3
+done

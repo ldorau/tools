@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo "Will execute the command: $*"
+
+start=$(date +%s);
+i=0;
+
+while $*; do 
+	i=$((i+1));
+	echo $i;
+done;
+
+end=$(date +%s);
+
+echo ran for $(($end-$start)) seconds $i iterations
+

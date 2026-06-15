@@ -1,0 +1,17 @@
+#!/bin/bash
+
+STATUS=`git status --porcelain`
+if [ "$STATUS" != "" ]; then
+	echo "Cleaning working directory..."
+	git clean -f -d
+fi
+
+if [ "$1" == "-a" ]; then
+	for repo in $(git remote | xargs); do
+		echo "git remote prune $repo..."
+		git remote prune $repo
+	done
+
+	# git gc --prune=now
+fi
+

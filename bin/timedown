@@ -1,0 +1,19 @@
+#!/bin/bash
+
+MINS=$1
+[ "$MINS" == "" ] && exit 0
+
+TIME_START=$(date +%s)
+SECS=$(($MINS * 60))
+TIME_END=$(($TIME_START + $SECS))
+
+rm -f /tmp/timeleft
+while true; do
+	TIME_NOW=$(date +%s)
+	[ $TIME_NOW -ge $TIME_END ] && echo | tee -a /tmp/timeleft && exit 0
+	SECS=$(($TIME_END - $TIME_NOW))
+	MINS=$(($SECS / 60))
+	SECS=$(($SECS % 60))
+	echo -e -n "\rTime left: $MINS min $SECS sec            " | tee -a /tmp/timeleft
+	sleep 1
+done

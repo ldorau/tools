@@ -1,0 +1,22 @@
+#!/bin/bash
+
+COMMAND=$*
+
+
+N=1
+TIME_START=$(date +%s)
+
+while true; do
+	echo "=== RUN #$N ==="
+	eval $COMMAND || break
+	N=$(($N + 1))
+done
+
+TIME_END=$(date +%s)
+SECS=$(($TIME_END - $TIME_START))
+MINS=$(($SECS / 60))
+SECS=$(($SECS % 60))
+
+echo
+echo "Failed in run #$N (after $MINS min $SECS sec)"
+echo

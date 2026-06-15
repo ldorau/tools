@@ -1,0 +1,68 @@
+#!/bin/bash
+
+TOOLS=$(dirname $(which git-alias))
+alias ed="$TOOLS/ed"
+
+alias date-git='date +"%a %b %-d %H:%M:%S %Y %z"'
+alias ga='git add'
+alias gaa='git add *'
+alias gau='git-add-unmerged'
+alias gb='git-branch'
+alias gbrh='git-branch-reset-here'
+alias gc='git commit'
+alias gca='git commit -a'
+alias gcaa='git commit -a --amend'
+alias gco='git checkout'
+alias gcp='git cherry-pick'
+alias gcf='git commit -a --amend --no-edit ; git clang-format HEAD~1 ; git commit -a --amend --no-edit'
+alias gd='git diff'
+alias gdo='git diff origin/$(git-get-current-branch)'
+alias gfa='git fetch --all'
+alias gl1='git log -1'
+alias gl1p='git log -1 -p'
+alias gl='git log'
+alias glno='git log --name-only'
+alias glp='git log -p'
+alias gp='git pull'
+alias gr='git restore'
+alias grst='git restore --staged'
+alias grh='git reset --hard'
+alias grho='git reset --hard origin/$(git-get-current-branch)'
+alias grc='git rebase --continue'
+alias gri='git rebase -i'
+alias grs='git rebase --skip'
+alias grv='git remote -v'
+alias grm='git reset --mixed'
+alias gs='git status'
+alias venv="cd && python3 -m venv .venv && source .venv/bin/activate ; cd -"
+
+if [[ "$0" != *"bash"* ]]; then
+	echo "Warning: this file has to be sourced in the following way:"
+	echo "$ source $0"
+	DIR=$(dirname $(realpath $0))
+	grep -q -e "git-alias" $HOME/.bashrc || ( echo "source $DIR/$0" >> $HOME/.bashrc && echo "Sourcing git-alias added to ~/.bashrc." )
+	grep -q -e "$DIR" $HOME/.bashrc || ( echo "export PATH=\$PATH:$DIR" >> $HOME/.bashrc && echo "The $DIR directory added to PATH" )
+	echo $PATH | grep -q -e "$DIR" || export PATH=$PATH:$DIR
+else
+	echo "Done. Git aliases sourced correctly."
+fi
+
+DATE_FILE=$HOME/.date-mytools
+touch $DATE_FILE
+DATE=$(date +%Y-%m-%d)
+if [ "$(cat $DATE_FILE)" != "$DATE" ]; then
+	echo "$DATE" > $DATE_FILE
+	WD=$(pwd)
+	TOOLS=$(dirname $(which git-alias))
+	cd $TOOLS
+	REPO=$(git-get-current-repo)
+	if [ "$REPO" != "" ]; then
+		echo "Pulling mytools ..."
+		proxy-check
+		if ! git pull; then
+			proxy-toggle
+			git pull || true
+		fi || true
+	fi || true
+	cd $WD
+fi

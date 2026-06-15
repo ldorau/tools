@@ -1,0 +1,8 @@
+#!/bin/bash
+
+PATTERN=$1
+
+PIDS=$(ps aux | grep -e $(whoami) | grep -e "$PATTERN" | grep -v -e grep -e kill-ps | awk '{ print $2 }' | xargs)
+[ "$PIDS" != "" ] && kill $PIDS
+PIDS=$(ps aux | grep -e $(whoami) | grep -e "$PATTERN" | grep -v -e grep -e kill-ps | awk '{ print $2 }' | xargs)
+[ "$PIDS" != "" ] && kill -9 $PIDS

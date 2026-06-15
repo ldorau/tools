@@ -1,0 +1,29 @@
+#!/bin/bash
+
+[ $1 ] && [ -d $1 ] && cd $1
+
+if [ "$2" == "" ]; then
+	AUTO=1
+	BRANCH="auto-push"
+	TITLE="common: AUTO-PUSH"
+else
+	AUTO=0
+	BRANCH=$2
+	TITLE="$BRANCH: automatic update"
+fi
+
+[ ! -d .git ] && echo "Not a main git directory !" && exit 1
+
+if ! git status | grep "nothing to commit, working tree clean" >/dev/null 2>&1; then
+	git status | grep "Untracked files" >/dev/null 2>&1 && git add -A || true
+	git commit -a -m "$TITLE" || true
+	if [ $AUTO -eq 1 ]; then
+		git branch -D $BRANCH 2>/dev/null || true
+		git checkout -b $BRANCH 2>/dev/null || true
+	fi
+	git checkout $BRANCH 2>/dev/null || true
+	CB=$(git-get-current-branch)
+	[ "$CB" == "$BRANCH" ] && FP="-f" || FP=""
+	git-push-current-branch $FP
+fi
+

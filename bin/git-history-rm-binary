@@ -1,0 +1,24 @@
+#!/bin/bash
+
+BR_ORIG=$(git-get-current-branch)
+
+TMP=/tmp/tmp-$$
+
+HASHES=$(git log --pretty=format:"%H" | xargs)
+for hash in $HASHES; do
+	git-temp $hash
+	[ "$BR_TEMP" != "" ] && git-rm-branch $BR_TEMP
+	BR_TEMP=$(git-get-current-branch)
+	git log -1
+	# for file in $(find -type f | grep -v -e "./.git/" -e 2023 -e 2024 | sort); do
+	for file in $(git log -1 --name-only --pretty="" | sort); do
+		[ -f $file ] && file $file | grep -v -e ASCII -e text -e empty -e "RAGE Package Format" -e "PEM certificate" -e "private key" -e "public key" -e "JSON data" -e "symbolic link to"
+	done > $TMP
+	if [ $(cat $TMP | wc -l) -gt 0 ]; then
+		cat $TMP
+		exit 1
+	fi
+done
+
+git checkout $BR_ORIG
+[ "$BR_TEMP" != "" ] && git-rm-branch $BR_TEMP

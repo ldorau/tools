@@ -1,0 +1,32 @@
+#!/bin/bash
+
+HASHES=$(git log --pretty=format:"%H" | xargs)
+for hash in $HASHES; do
+	if [ "$2" = "" ]; then
+		if git log -1 -p $hash | grep -a -e "$1" > /dev/null; then
+			git log -1 -p $hash
+			echo
+			echo "==="
+			echo
+			git log -1 -p $hash | grep -a --color=auto -e "$1"
+			echo
+			echo -n "Next (y/n)? "
+			read -n1 resp
+			echo
+			[ "$resp" == "n" ] && break
+		fi
+	else
+		if git log -1 -p $hash | grep -a -v -e "$2" | grep -a -e "$1" > /dev/null; then
+			git log -1 -p $hash
+			echo
+			echo "==="
+			echo
+			git log -1 -p $hash | grep -a -v -e "$2" | grep -a --color=auto -e "$1"
+			echo
+			echo -n "Next (y/n)? "
+			read -n1 resp
+			echo
+			[ "$resp" == "n" ] && break
+		fi
+	fi
+done

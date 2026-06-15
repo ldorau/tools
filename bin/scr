@@ -1,0 +1,63 @@
+#!/bin/bash
+
+CONFIG=$HOME/.screen.txt
+TMP=$HOME/.screen.tmp
+
+[ ! -f $CONFIG ] && touch $CONFIG
+
+N=$1
+shift
+
+[ "$1" = "d" ] && DETACH="-d" && shift 1 || DETACH=""
+
+function print_list() {
+	rm -f $TMP
+	DTN=1
+	screen -list | grep -e "tached" | \
+	while IFS='' read -r line || [[ -n "$line" ]]; do
+		name=$(echo $line | awk '{print $1}')
+		DESC=$(grep -e "$name" $CONFIG | tee -a $TMP | cut -d' ' -f2-)
+		line=$(echo "$line" | sed 's/Detached/ /g' | sed 's/Attached/\+/g')
+		echo "$DTN: $line \"$DESC\""
+		DTN=$(($DTN + 1))
+	done
+	[ -f $TMP ] && mv $TMP $CONFIG
+}
+
+NALL=$(screen -list | grep -c -e "tached")
+if [ $NALL -eq 0 ]; then
+	echo "No screens to attach :-("
+	exit 0
+fi
+
+if [ "$N" = "n" ]; then
+	echo "Starting a new screen ..."
+	screen
+	exit $?
+fi
+
+if [ "$N" = "" -o "$N" = "a" ]; then
+	echo "Please select number of a detached screen:"
+	print_list
+	exit 0
+fi
+
+if [ $N -gt $NALL ]; then
+	echo "ERROR: screen number $N is too great, there are only $NALL screens:"
+	echo
+	print_list
+	exit 1
+fi
+
+NAME=$(screen -list | grep -e "tached" | head -n $N | tail -n1 | awk '{print $1}')
+
+# update description in the config file
+if [ "$1" != "" ]; then
+	echo "Updating $NAME to \"$*\""
+	sed -i "/$NAME/d" $CONFIG
+	echo "$NAME $*" >> $CONFIG
+fi
+
+echo "$ screen $DETACH -r $NAME"
+screen $DETACH -r $NAME
+echo "$ screen $DETACH -r $NAME (DONE)"

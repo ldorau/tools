@@ -1,0 +1,14 @@
+#!/bin/bash
+
+STOP_FILE=/tmp/temp-stop-vv
+rm -f $STOP_FILE
+
+CMD="$*"
+for f in $(eval $CMD | cut -d: -f1-2); do
+	v $f
+	if [ -f $STOP_FILE ]; then
+		echo "Stopped!"
+		rm -f $STOP_FILE
+		exit 0
+	fi
+done

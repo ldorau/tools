@@ -1,0 +1,44 @@
+#!/bin/bash -e
+
+ORIGIN=$(git-get-origin)
+UPSTREAM=$(git-get-upstream)
+CB=$(git-get-current-branch)
+
+main
+
+if [ "$1" == "" -o "$1" == "$ORIGIN" ]; then
+	REMOTE=$ORIGIN
+elif [ "$1" == "$UPSTREAM" ]; then
+	REMOTE=$UPSTREAM
+fi
+
+echo "$ git fetch $REMOTE --tags --force"
+git fetch $REMOTE --tags --force
+echo "$ git remote prune $REMOTE"
+git remote prune $REMOTE
+
+BRANCHES=$(git branch -a | grep -e "remotes/$REMOTE" | grep -v -e "$ORIGIN/HEAD" | cut -d'/' -f3 | sed "s/'/\\\'/g" | xargs)
+
+echo ">>> Updating ..."
+
+for b in $BRANCHES; do
+	TR=$(git log --pretty=%ct -1 $REMOTE/$b -- 2>/dev/null || true)
+	[ "$TR" == "" ] && continue
+
+	TL=$(git log --pretty=%ct -1 $b -- 2>/dev/null || true)
+	if [ "$TL" == "" ]; then
+		echo ">>> Creating: $b"
+		git branch --track -f $b $REMOTE/$b
+		continue
+	fi
+
+	if [ $TR -gt $TL ]; then
+		echo ">>> Updating: $b"
+		git branch -D $b
+		git branch --track -f $b $REMOTE/$b
+	fi
+done
+
+git checkout $CB
+
+echo ">>> Done"

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+[ "$(whoami)" = "pi" ] && exit 0
+
+WD=$(dirname $0)
+
+if [ "$(which wget 2>/dev/null)" = "" ]; then
+	echo "ERROR: wget is not installed!"
+	exit 1
+fi
+
+if ! wget -q --spider -t1 -T1 www.google.com; then
+	source $WD/proxy-toggle-all.sh
+fi

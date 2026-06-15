@@ -1,0 +1,12 @@
+#!/bin/bash
+# echo "<$1>"
+FILE=$(echo "$*" | cut -d: -f1)
+LINE=$(echo "$*" | cut -s -d: -f2)
+[ "$LINE" != "" ] && LINE=+$LINE
+# echo "FILE=$FILE"
+# echo "LINE=$LINE"
+# echo "$ vim $FILE $LINE"
+[ ! -f "$FILE" ] && exit 1
+# ls -al "$FILE"
+# echo "File exits:  \"$FILE\" $LINE"
+vim "$FILE" $LINE || echo "Command failed: vim \"$FILE\" $LINE"

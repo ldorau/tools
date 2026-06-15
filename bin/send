@@ -1,0 +1,17 @@
+#!/bin/bash
+
+FILE=$(mktemp --tmpdir tmp-XXXXXXXXXX.txt)
+
+vim $FILE
+
+RV=0
+
+if [ $(cat $FILE | wc -c) -gt 0 ]; then
+	SUBJECT="[SEND] $(head -n1 $FILE)"
+	m "$FILE" "$SUBJECT"
+	RV=$?
+else
+	echo "Empty file, aborting..."
+fi
+
+[ $RV -eq 0 ] && rm -f $FILE

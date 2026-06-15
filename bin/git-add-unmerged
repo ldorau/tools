@@ -1,0 +1,12 @@
+#!/bin/bash
+
+PATTERN=$1
+[ "$PATTERN" = "" ] && PATTERN="Unmerged paths"
+
+FILES=$(git status | awk "/$PATTERN/{y=1} y" | grep -e ":" | cut -d":" -f2- | xargs)
+
+[ "$FILES" = "" ] && echo "No files to add for \"$PATTERN\" ..." && exit 1
+
+echo "Adding \"$PATTERN\" ..."
+echo "$ git add $FILES"
+git add $FILES

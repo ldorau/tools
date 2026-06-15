@@ -1,0 +1,36 @@
+#!/bin/bash
+
+TEMP=/tmp/$$-dictionary-rm-words
+
+if [ "$1" == "" ]; then
+	echo "Usage: $0 <list-of-words-to-be-removed>"
+	exit 0
+fi
+
+DIC_PATH=/mnt/files/work/nvml_tools/spell-checker
+DICTIONARY=$DIC_PATH/spell-checker-dictionary
+
+if [ ! -f $DICTIONARY ]; then
+	echo "Error: cannot find the dictionary file: $DICTIONARY. Exiting ..."
+	exit 1
+fi
+echo "Dictionary: $DICTIONARY"
+
+echo "Following words were removed:"
+for word in $*; do
+	if [ "`grep "=$word=" $DICTIONARY`" != "" ]; then
+		grep -v "=$word=" $DICTIONARY > $TEMP
+		mv $TEMP $DICTIONARY
+		echo "$word"
+	else
+		echo "(word '$word' not found)"
+	fi
+done
+
+# sort $DICTIONARY
+
+rm -f $TEMP
+cat $DICTIONARY | sort | uniq > $TEMP
+mv $TEMP $DICTIONARY
+rm -f $TEMP
+

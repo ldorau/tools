@@ -1,0 +1,18 @@
+#!/bin/bash
+
+ORIGIN=$(git-get-origin)
+UPSTREAM=$(git-get-upstream)
+
+if [ "$1" == "" ]; then
+        echo "ERROR: no branch name given"
+        exit 0;
+fi
+
+for branch in $*; do
+	prefix=$(echo $branch | cut -d'/' -f1)
+	[ "$prefix" == "remotes" ] && continue
+
+	git branch -D $branch
+	[ $(git log -1 remotes/$ORIGIN/$branch 2>/dev/null   | wc -l) -gt 0 ] && git branch -r -d $ORIGIN/$branch
+	[ $(git log -1 remotes/$UPSTREAM/$branch 2>/dev/null | wc -l) -gt 0 ] && git branch -r -d $UPSTREAM/$branch
+done

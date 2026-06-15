@@ -1,0 +1,37 @@
+#!/bin/bash
+
+VALGRIND="valgrind --leak-check=full --track-origins=yes"
+DIR="./tests/integration"
+
+EXAMPLES="01 02 03 04 05 06 07 08 09 10 11"
+
+NO_LEAKS="All heap blocks were freed -- no leaks are possible"
+NO_ERRORS="ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)"
+
+ERRORS=0
+
+for NEX in $EXAMPLES; do
+	EXAMPLE="example-minussr-${NEX}"
+	$VALGRIND $DIR/$EXAMPLE/$EXAMPLE 2>&1 | tee $EXAMPLE.log
+	grep -e "$NO_LEAKS" $EXAMPLE.log || ERRORS=1
+	grep -e "$NO_ERRORS" $EXAMPLE.log || ERRORS=1
+done
+
+if [ $ERRORS -eq 0 ]; then
+	echo
+	echo "==================================="
+	echo
+	echo "All tests PASSED!"
+	echo
+	exit 0
+fi
+
+for NEX in $EXAMPLES; do
+	if ! grep -e "$NO_LEAKS" $EXAMPLE.log; then
+		echo "$NEX - leaks"
+	fi
+	if ! grep -e "$NO_ERRORS" $EXAMPLE.log; then
+		echo "$NEX - errors"
+	fi
+done
+

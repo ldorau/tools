@@ -1,0 +1,8 @@
+#!/bin/bash
+
+BRANCHES=$(git branch | cut -c 3- | xargs)
+
+for branch in $BRANCHES; do
+	DATE=$(git log -1 --format="%ct %ci" $branch --)
+	echo "$DATE $branch"
+done | sort -n -r | cut -d" " -f2,3,5

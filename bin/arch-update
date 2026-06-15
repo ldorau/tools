@@ -1,0 +1,127 @@
+#!/bin/bash
+
+if ! which pacman > /dev/null 2>&1; then
+	echo "Huh, it is not an Arch Linux, man..."
+	exit 0
+fi
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IPKGS="linux,linux-headers,virtualbox-host-modules-arch"
+[ "$PACMAN_IGNORE" != "" ] && IPKGS="$IPKGS,$PACMAN_IGNORE"
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+mkdir -p ~/work
+ARCH_LOG=~/work/arch-update-$(date +%y-%m-%d-%T)-$$.log
+
+if [ "$1" == "-h" ]; then
+	echo "$(basename $0) [-n] [-A|-f|<list_of_packages_to_be_updated>]"
+	echo "   Update all packages except of: $IPKGS"
+	echo "   -A - update ALL packages"
+	echo "   -f - force AUR update"
+	echo "   -n - dry run"
+	exit 0
+fi
+
+[ "$1" == "-n" ] && DRY_RUN=YES && shift
+
+IGNORE=""
+case $1 in
+"-A")
+	[ "$PACMAN_IGNORE" != "" ] && IGNORE="--ignore $PACMAN_IGNORE"
+	;;
+*)
+	IGNORE="--ignore $IPKGS"
+	;;
+esac
+
+case $1 in
+""|"-i"|"-A"|"-f")
+	OPT="-Syu"
+	;;
+*)
+	OPT="-S $*"
+	;;
+esac
+
+CMD="sudo-proxy pacman $OPT --color always --logfile $ARCH_LOG $IGNORE"
+
+echo $CMD
+[ "$DRY_RUN" == "YES" ] && exit 0
+eval $CMD
+
+if [ -f $ARCH_LOG ]; then
+	if [ $(cat $ARCH_LOG | wc -l) -le 3 ]; then
+		rm -f $ARCH_LOG
+		echo " Removed empty log"
+	else
+		sudo chown $(whoami):$(whoami) $ARCH_LOG
+	fi
+fi
+
+echo
+echo ":: Updating AUR packages..."
+mkdir -p ~/aur
+cd ~/aur
+for pkg in $(ls -1); do
+	echo "* $pkg:"
+	arch-aur $pkg $1
+	if [ $? -ne 0 -a "$1" != "-f" ]; then
+		echo "^^^^^^^ FAILED ^^^^^^^"
+		echo
+		echo "******* Retrying with FORCE *******"
+		echo "* $pkg:"
+		arch-aur $pkg -f
+	fi
+done
+
+HOST=$(hostname | cut -d. -f1)
+echo
+
+if [ -d ~/work ]; then
+	echo ":: Saving list of packages..."
+	ALL_PACKAGES=~/work/pacman-all-packages.txt
+	pacman -Q | cut -d' ' -f1 > $ALL_PACKAGES
+	for f in $(pacman -Ql mesa | grep nouveau | cut -d' ' -f2 | xargs); do
+		pacman -Qo $f >> $ALL_PACKAGES
+	done
+	echo "List of packages saved to: $ALL_PACKAGES"
+
+	if [ -d ~/work/mytools/config/pacman-pkg ]; then
+		DIR=~/work/mytools/config/pacman-pkg/${HOST}/
+		mkdir -p $DIR
+		cp -f $ALL_PACKAGES $DIR
+	fi
+fi
+
+echo ":: Pruning cache of packages..."
+sudo paccache -r
+
+echo ":: Checking database of packages..."
+sudo pacman -D -k
+
+echo ":: Checking packages..."
+ERR=/tmp/pacman.err
+sudo pacman -Q --check 2>$ERR | grep -v -e "0 missing files"
+if [ $(cat $ERR | wc -l) -gt 0 ]; then
+	cat $ERR
+else
+	echo "No errors found"
+fi
+
+echo ":: New config files:"
+NEW=/tmp/pacman.new
+sudo find /etc -iname "*.pacnew" > $NEW
+if [ -f $ARCH_LOG ] && [ $(cat $ARCH_LOG | grep -e '.pacnew' | wc -l) -gt 0 ]; then
+	cat $ARCH_LOG | grep -e '.pacnew'
+elif [ -f $NEW ] && [ $(cat $NEW | wc -l) -gt 0 ]; then
+	echo "   (sudo find /etc -iname '*.pacnew'):"
+	cat $NEW
+else
+	echo "No new config files found"
+fi
+
+if [ "$PACMAN_IGNORE" != "" ]; then
+	echo
+	echo "Notice: PACMAN_IGNORE is set, the following packages have been skipped: $PACMAN_IGNORE"
+fi
+

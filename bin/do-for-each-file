@@ -1,0 +1,9 @@
+# Do $2 for each file $1
+echo "for file in \$(find . -name \"$1\" -print0 | xargs -0) ; do $2 \$file ; done"
+echo "---"
+
+for file in $(find . -name "$1" -print0 | xargs -0) ; do $2 $file ; done
+
+echo "---"
+echo "for file in \$(find . -name \"$1\" -print0 | xargs -0) ; do $2 \$file ; done"
+

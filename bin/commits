@@ -1,0 +1,27 @@
+#!/bin/bash
+
+BRANCH= # origin/main
+TMP_FILE=/tmp/tmp-commits-$$
+TMP_LOG=/tmp/tmp-commits-log-$$
+rm -f $TMP_FILE $TMP_LOG
+
+git log $BRANCH > $TMP_LOG
+PULLS_1=`cat $TMP_LOG | grep -A2 "Date:" | grep "Merge pull request" | wc -l`
+PULLS_2=`cat $TMP_LOG | grep -A2 "Date:" | grep "Merge branch" | wc -l`
+PULLS=$((PULLS_1 + PULLS_2))
+
+AUTHORS=`cat $TMP_LOG | grep Author | cut -d" " -f3 | sort | uniq | cut -d"." -f2 | cut -d"@" -f1 `
+AUTHORS=`echo $AUTHORS`
+
+for guy in $AUTHORS; do
+	COMMITS=`cat $TMP_LOG | grep Author | grep $guy | wc -l`
+	if [ "$guy" == "Rudoff" ]; then
+		COMMITS=$(($COMMITS - $PULLS))
+	fi
+	echo "$COMMITS $guy" >> $TMP_FILE
+done
+
+echo "Commits on branch $BRANCH:"
+cat $TMP_FILE | sort -g -r
+rm -f $TMP_FILE $TMP_LOG
+

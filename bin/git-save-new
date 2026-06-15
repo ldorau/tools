@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "git commit -a --no-edit -m \"$1\""
+git commit -a --no-edit -m "$1"
+git-push-current-branch -f

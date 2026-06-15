@@ -1,0 +1,4 @@
+#!/bin/bash
+
+main
+git branch -D `git branch -a | grep review`

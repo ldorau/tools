@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ "$1" == "" ]; then
+        echo "ERROR: no remote branch name given"
+        exit 1;
+fi
+
+WD=$(dirname $0)
+. $WD/functions.sh
+
+REMOTE=`echo $1 | cut -d"/" -f1`
+BRANCH=`echo $1 | cut -d"/" -f2`
+
+run_command git fetch $REMOTE
+run_command git branch $BRANCH --track $REMOTE/$BRANCH
+run_command git checkout $BRANCH
+run_command git reset --hard $REMOTE/$BRANCH

@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+
+# find . -type d | \
+find . | \
+while IFS='' read -r line || [[ -n "$line" ]]; do
+	OLD="$line"
+	NEW=$(echo "$OLD" | sed "s/$1/$2/g")
+	[ "$NEW" != "$OLD" ] && mv -v "$OLD" $NEW
+done

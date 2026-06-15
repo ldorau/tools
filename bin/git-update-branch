@@ -1,0 +1,35 @@
+#!/bin/bash
+
+ORIGIN=$(git-get-origin)
+
+# $1 = local branch
+LB=$1
+
+# $2 = remote branch
+RB=$2
+
+CURRENT_BRANCH=`git branch | grep "*" | cut -c 3-`
+
+if [ "$LB" == "" ]; then
+	LB=$CURRENT_BRANCH
+        echo "WARNING: no branch name given - defaulting to current branch ($LB)"
+        echo "USAGE  : git-update <local-branch> [<remote-branch>]"
+	echo
+fi
+if [ "$RB" == "" ]; then
+	RB=$LB
+fi
+
+echo "Commiting all local changes..."
+git commit -a
+echo "Checkouting the local branch $LB"
+git checkout $LB
+echo "Fetching..."
+git fetch
+echo "Fetching tags..."
+git fetch --tags
+echo "Resetting to $ORIGIN/$RB"
+git reset --hard $ORIGIN/$RB
+echo "Status:"
+git status
+

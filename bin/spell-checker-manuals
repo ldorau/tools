@@ -1,0 +1,81 @@
+#!/bin/bash
+
+if [ "`aspell -v 2>/dev/null`" == "" ]; then
+	echo "Error: aspell is not installed. Exiting..."
+	exit 1
+fi
+
+NVML_DIR=$1
+
+if [ "$NVML_DIR" == "" ]; then
+	echo "Usage: $0 <NVML-git-repo-directory> [path-to-dictionary]"
+	exit 1
+fi
+
+DIC_PATH=$2
+if [ "$DIC_PATH" == "" ]; then
+	DIC_PATH="."
+fi
+DICTIONARY=$DIC_PATH/spell-checker-dictionary
+
+if [ ! -f $DICTIONARY ]; then
+	echo "Error: cannot find the dictionary file: $DICTIONARY. Exiting..."
+        exit 1
+fi
+
+# temporary files
+TEMP_PATTERN=/tmp/spell-check-temp-file
+ALL_LINES=$TEMP_PATTERN-$$-1
+ALL_WORDS=$TEMP_PATTERN-$$-2
+UNIQ_WORDS=$TEMP_PATTERN-$$-3
+COUNT_WORDS=$TEMP_PATTERN-$$-4
+
+# gather all README files
+FILES=`find $NVML_DIR \( -path $NVML_DIR/rpmbuild -o -path $NVML_DIR/nvml \) \
+		-prune -o -type f -name 'README*' -print | xargs`
+# add manual files from the 'doc' directory
+FILES="$FILES `find $NVML_DIR/doc -type f -name '*.3' -print | xargs`"
+
+if [ "$FILES" == "" ]; then
+        echo "Spell-checker status is: SUCCESSFUL"
+        exit 0
+fi
+
+ERRORS=0
+for file in $FILES ; do
+	FILE=$file
+
+	# check spelling using Aspell
+	aspell -a --ignore-case --dont-suggest -l en_US  < $FILE 2>/dev/null \
+		| grep " " | grep -v "International Ispell Version" > $ALL_LINES
+
+	# cut out words
+	cat $ALL_LINES | cut -d" " -f2 > $ALL_WORDS
+	cat $ALL_WORDS | sort | uniq > $UNIQ_WORDS
+	rm -f $COUNT_WORDS
+
+	for word in $(cat $UNIQ_WORDS) ; do
+		# look up words in our own dictionary
+	        grep "=$word=" $DICTIONARY 2>&1 > /dev/null
+	        if [ $? -ne 0 ]; then
+	                COUNT=$(cat $ALL_LINES | grep " $word " | wc -l)
+	                echo "$COUNT time(s): $word" >> $COUNT_WORDS
+	        fi
+	done 
+
+	if [ -f $COUNT_WORDS ]; then
+	        echo "Potential spelling errors in file $FILE:"
+	        cat $COUNT_WORDS | sort -g 
+		echo
+		ERRORS=1
+	fi
+	rm -f /tmp/spell-check-temp-file-*
+done
+
+if [ $ERRORS -eq 0 ]; then
+        echo "Spell-checker status is: SUCCESSFUL"
+	exit 0
+else
+        echo "Spell-checker status is: potential spelling errors found"
+	exit 1
+fi

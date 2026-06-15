@@ -1,0 +1,18 @@
+#!/bin/bash
+
+REPO=$1
+
+ALLOWED=$(git remote -v | grep -e "$REPO" | grep -e "$(whoami)/")
+
+if [ "$FORBIDD" != "" -o "$ALLOWED" == "" ]; then
+	echo "ERROR: Pushing to foreign repos is forbidden!"
+	echo "       You have tried to push to the \"$REPO\" repo:"
+	echo
+	echo "       $ git push $*"
+	echo
+	git remote -v | grep -e "$REPO"
+	exit 1
+fi
+
+echo ">>> git push $*"
+git push $*

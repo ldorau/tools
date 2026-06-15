@@ -1,0 +1,38 @@
+#!/bin/bash
+
+git-is-private-repo
+
+ORIGIN=$(git-get-origin)
+
+function run_command() {
+        COMMAND="$*"
+        echo
+        echo ">>> $COMMAND ..."
+        eval $COMMAND
+}
+
+if [ "$1" == "-f" ]; then
+        FORCE="-f"
+        shift
+else
+        FORCE=""
+fi
+
+if [ "$1" == "--tags" ]; then
+        TAGS="--tags"
+        shift
+else
+        TAGS=""
+fi
+
+if [ "$1" == "" ]; then
+        REPO="$ORIGIN"
+else
+        REPO=$1
+	shift
+fi
+
+BRANCH=`git branch | grep "*" | cut -c 3-`
+
+echo "Pushing to branch $BRANCH ..."
+run_command git-push-secure $REPO $FORCE $TAGS HEAD:$BRANCH

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ "$1" = "" ]; then
+	echo "Error: missing argument"
+	exit 1
+fi
+
+which $1 || alias | grep -e "$1="

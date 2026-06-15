@@ -1,0 +1,12 @@
+#!/bin/bash
+# git commit -a --amend && git rebase --continue
+
+git diff | less
+echo -n "Do you want to commit these changes (y/n)? "
+read -n1 resp
+echo
+[ "$resp" != "y" ] && exit 0
+git commit -a --amend
+
+echo "$ git rebase --continue"
+git rebase --continue

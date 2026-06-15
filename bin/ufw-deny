@@ -1,0 +1,5 @@
+#!/bin/bash
+
+for ip in $*; do
+	sudo ufw insert 1 deny from $ip
+done
