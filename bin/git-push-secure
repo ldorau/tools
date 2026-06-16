@@ -2,7 +2,15 @@
 
 REPO=$1
 
-ALLOWED=$(git remote -v | grep -e "$REPO" | grep -e "$(whoami)/")
+FILE_PRIVATE_NAME=$HOME/.private_name
+
+if [ -f $FILE_PRIVATE_NAME ]; then
+	PRIVATE_NAME=$(cat $FILE_PRIVATE_NAME)
+else
+	PRIVATE_NAME=$(whoami)
+fi
+
+ALLOWED=$(git remote -v | grep -e "$REPO" | grep -e "${PRIVATE_NAME}/")
 
 if [ "$FORBIDD" != "" -o "$ALLOWED" == "" ]; then
 	echo "ERROR: Pushing to foreign repos is forbidden!"
