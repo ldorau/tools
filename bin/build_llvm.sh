@@ -17,6 +17,8 @@ export LD_LIBRARY_PATH=~/workdir/igc-install/lib/:~/workdir/level-zero-install/l
 set +e
 set -x
 
+[ "$VIRTUAL_ENV" = "" ] && cd ; python3 -m venv .venv ; source .venv/bin/activate ; cd -
+
 NPROC=64
 if [ "$1" = "N" ]; then
 	NPROC=$2
