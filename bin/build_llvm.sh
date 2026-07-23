@@ -61,7 +61,6 @@ if [ $SKIP_CONF -eq 0 ]; then
 		-w $GITHUB_WORKSPACE \
 		-s $SOURCE_DIR \
 		-o $BUILD_DIR \
-		--native_cpu \
 		-DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
 		-DCMAKE_C_COMPILER_LAUNCHER=ccache \
 		-DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
@@ -74,6 +73,7 @@ if [ $SKIP_CONF -eq 0 ]; then
 		-DUR_BUILD_ADAPTER_NATIVE_CPU=OFF \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
 		-DUR_USE_EXTERNAL_UMF=OFF
+		# --native_cpu \
 		# --ci-defaults --native_cpu \
 		# --ci-defaults --hip --cuda --native_cpu \
 		# -DLEVEL_ZERO_INCLUDE_DIR="" \
