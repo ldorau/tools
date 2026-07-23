@@ -1,18 +1,21 @@
 #!/bin/bash
 
-if [ -f $1 ]; then
-	vim $1
+FILE=$(echo $1 | cut -d: -f1)
+LINE=$(echo $1 | cut -d: -f2)
+
+if [ -f $FILE ]; then
+	vim $FILE +$LINE
 	exit 0
 fi
 
-FILE=$(which $1)
+FILE=$(which $FILE)
 if [ "$FILE" == "" ]; then
 	echo "Error: file not found: $1"
 	exit 1
 fi
 
 if file $FILE | grep -q -e "ASCII text"; then
-	vim $FILE
+	vim $FILE +$LINE
 else
 	echo "Error: not an ASCII file: $FILE"
 	file $FILE
