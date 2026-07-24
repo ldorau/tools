@@ -120,6 +120,7 @@ build_target
 build_target -t sycl-toolchain
 build_target -t FileCheck
 build_target -t not
+build_target -t llvm-symbolizer
 build_target -t check-sycl-unittests
 
 echo
