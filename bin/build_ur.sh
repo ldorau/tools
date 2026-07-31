@@ -2,7 +2,7 @@
 
 set -ex
 
-[ "$VIRTUAL_ENV" = "" ] && cd ; python3 -m venv .venv ; source .venv/bin/activate ; cd -
+[ "$VIRTUAL_ENV" = "" ] && ( cd ; python3 -m venv .venv ; source .venv/bin/activate ; cd - )
 
 NPROC=128
 if [ "$1" = "N" ]; then
@@ -43,8 +43,18 @@ cmake --build . -j $NPROC
 # $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param "selector=level_zero:*" ./test/conformance/
 echo "#######################################################################################################"
 echo ">>> conformance L0v2"
-echo "+ LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib:$LD_LIBRARY_PATH UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param selector=level_zero_v2:* ./test/conformance/"
-LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib:$LD_LIBRARY_PATH UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param selector=level_zero_v2:* ./test/conformance/
+# Deliberately do NOT inherit the caller's LD_LIBRARY_PATH here. The freshly
+# built loader/validation-layer only need the locally built lib dir (RUNPATH
+# takes care of the rest, e.g. libumf). If the inherited LD_LIBRARY_PATH is
+# kept (e.g. it points at the DPC++ compiler build's lib dir for libsycl et
+# al.), the loader's automatic adapter discovery also finds the level_zero
+# (v1)/opencl adapters shipped with that build, which were built against a
+# different unified-runtime revision. Mixing an adapter with a mismatched
+# ur_dditable_t ABI into this loader causes urDeviceGet (and others) to jump
+# through a garbage function pointer and segfault, which is why nearly every
+# conformance test was failing/unresolved.
+echo "+ LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param selector=level_zero:* ./test/conformance/"
+LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param selector=level_zero:* ./test/conformance/
 echo "#######################################################################################################"
 
 # cmake --build . -j $NPROC -- check-unified-runtime-adapter
@@ -52,8 +62,8 @@ echo "##########################################################################
 # $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param "selector=level_zero:*" ./test/adapters/
 echo "#######################################################################################################"
 echo ">>> adapters L0v2"
-echo "+ LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib:$LD_LIBRARY_PATH UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param selector=level_zero_v2:* ./test/adapters/"
-LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib:$LD_LIBRARY_PATH UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param selector=level_zero_v2:* ./test/adapters/
+echo "+ LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param selector=level_zero:* ./test/adapters/"
+LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param selector=level_zero:* ./test/adapters/
 echo "#######################################################################################################"
 
 exit 0
