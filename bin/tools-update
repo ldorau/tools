@@ -1,5 +1,9 @@
 #!/bin/bash
 
+TOOLS_BIN=$HOME/work/tools/bin
+
+[ ! -d $TOOLS_BIN ] && echo "Error: directory not found: $TOOLS_BIN" && exit 1
+
 GET_FILES=$HOME/work/mytools/bin/tools-get-files
 
 if [ ! -x $GET_FILES ]; then
@@ -7,7 +11,7 @@ if [ ! -x $GET_FILES ]; then
 	exit 1
 fi
 
-cd $HOME/work/tools/bin
+cd $TOOLS_BIN
 git fetch --all
 git reset --hard origin/main
 
