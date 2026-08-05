@@ -12,13 +12,15 @@ shift
 
 function print_list() {
 	rm -f $TMP
+	HOSTNAME=$(hostname | cut -d. -f1)
 	DTN=1
 	screen -list | grep -e "tached" | \
 	while IFS='' read -r line || [[ -n "$line" ]]; do
 		name=$(echo $line | awk '{print $1}')
 		DESC=$(grep -e "$name" $CONFIG | tee -a $TMP | cut -d' ' -f2-)
-		line=$(echo "$line" | sed 's/Detached/ /g' | sed 's/Attached/\+/g')
-		echo "$DTN: $line \"$DESC\""
+		echo "$line" | grep -q -e "Attached" && ATT="(+)" || ATT="( )"
+		line=$(echo "$line" | sed 's/Detached/ /g' | sed 's/Attached/\+/g' | sed "s/\.$HOSTNAME//g")
+		echo -e "$DTN: $ATT \"$DESC\" \t $line"
 		DTN=$(($DTN + 1))
 	done
 	[ -f $TMP ] && mv $TMP $CONFIG

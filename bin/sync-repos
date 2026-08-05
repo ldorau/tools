@@ -90,7 +90,7 @@ function hide_branch() {
 
 #################################################################
 
-run_command git fetch $ORIGIN --tags --force
+# run_command git fetch $ORIGIN --tags --force
 
 [ "$ARG1" == "" ] && exit 0
 
