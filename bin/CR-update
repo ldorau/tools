@@ -1,0 +1,29 @@
+#!/bin/bash
+
+cd ~/work/compute-runtime
+git fetch --tags --force
+LATEST=$(git tag | tail -n1)
+CURRENT_FILE="build/.version"
+touch $CURRENT_FILE
+CURRENT=$(cat $CURRENT_FILE)
+
+[ "$LATEST" = "$CURRENT" ] && echo "L0 CR driver is up-to-date ($CURRENT). No update needed." && exit 0
+
+echo "Updating L0 CR driver to $LATEST ..."
+echo "$LATEST" > $CURRENT_FILE
+git reset --hard $LATEST
+
+echo "Archive the current L0 CR $CURRENT build ..."
+mv ~/work/compute-runtime/build ~/work/compute-runtime/build-$CURRENT
+
+echo "Building L0 CR Debug ..."
+echo "$ ~/work/intel-innersource/drivers.gpu.compute.runtime/scripts/build_local.sh $LATEST ~/work/compute-runtime/build Debug"
+~/work/intel-innersource/drivers.gpu.compute.runtime/scripts/build_local.sh $LATEST ~/work/compute-runtime/build "Debug"
+
+if [ $? -ne 0 ]; then
+	echo
+	echo "ERROR: build FAILED, restoring the previous $CURRENT build"
+	echo "$CURRENT" > $CURRENT_FILE
+	rm -rf ~/work/compute-runtime/build
+	mv ~/work/compute-runtime/build-$CURRENT ~/work/compute-runtime/build
+fi
