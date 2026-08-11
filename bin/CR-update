@@ -17,8 +17,8 @@ echo "Archive the current L0 CR $CURRENT build ..."
 mv ~/work/compute-runtime/build ~/work/compute-runtime/build-$CURRENT
 
 echo "Building L0 CR Debug ..."
-echo "$ ~/work/intel-innersource/drivers.gpu.compute.runtime/scripts/build_local.sh $LATEST ~/work/compute-runtime/build Debug"
-~/work/intel-innersource/drivers.gpu.compute.runtime/scripts/build_local.sh $LATEST ~/work/compute-runtime/build "Debug"
+echo "$ ~/work/mytools/bin/build_cr.sh $LATEST ~/work/compute-runtime/build Debug"
+~/work/mytools/bin/build_cr.sh $LATEST ~/work/compute-runtime/build "Debug"
 
 if [ $? -ne 0 ]; then
 	echo
