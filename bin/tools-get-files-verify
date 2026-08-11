@@ -3,6 +3,7 @@
 TOOLS=$HOME/work/tools/bin
 
 TMP=/tmp/tmp.$$
+TMP_2=/tmp/tmp.$$-2
 
 rm -f $TMP
 
@@ -15,7 +16,11 @@ for file in $(tools-get-files); do
 	echo "=${file}=" >> $TMP
 done
 
-echo "Missing files:"
+rm -f $TMP_2
 for file in $(ls -1 $TOOLS | xargs); do
-	grep -q -e "=${file}=" $TMP || echo ${file}
+	grep -q -e "=${file}=" $TMP || echo ${file} >> $TMP_2
 done
+
+[ ! -f $TMP_2 ] && echo "All is OK." && exit 0
+
+echo "Missing files:" && cat $TMP_2 && rm -f $TMP_2
