@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TOOLS=$(dirname $(which git-alias))
+TOOLS=$(dirname $(realpath $(which git-alias)))
 alias ed="$TOOLS/ed"
 
 alias date-git='date +"%a %b %-d %H:%M:%S %Y %z"'
