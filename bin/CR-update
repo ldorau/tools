@@ -3,9 +3,11 @@
 cd ~/work/compute-runtime
 git fetch --tags --force
 LATEST=$(git tag | tail -n1)
-CURRENT_FILE="build/.version"
+mkdir -p ./build
+CURRENT_FILE="./build/.version"
 touch $CURRENT_FILE
 CURRENT=$(cat $CURRENT_FILE)
+[ "$CURRENT" = "" ] && CURRENT="prev"
 
 [ "$LATEST" = "$CURRENT" ] && echo "L0 CR driver is up-to-date ($CURRENT). No update needed." && exit 0
 
