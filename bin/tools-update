@@ -1,5 +1,17 @@
 #!/bin/bash
 
+function update_repo() {
+	cd $1
+	git fetch --all
+	if git status | grep -q -e "modified:"; then
+		echo "Error: directory $1 is not clean:"
+		git status
+		exit 1
+	fi
+	git reset --hard origin/master
+}
+
+
 TOOLS_BIN=$HOME/work/tools/bin
 MYTOOLS_BIN=$HOME/work/mytools/bin
 
@@ -12,13 +24,8 @@ if [ ! -x $GET_FILES ]; then
 	exit 1
 fi
 
-cd $MYTOOLS_BIN
-git fetch --all
-git reset --hard origin/master
-
-cd $TOOLS_BIN
-git fetch --all
-git reset --hard origin/main
+update_repo $MYTOOLS_BIN
+update_repo $TOOLS_BIN
 
 for file in $($GET_FILES); do
 	MY_TOOLS=$HOME/work/mytools/bin/$file
@@ -35,3 +42,4 @@ for file in $($GET_FILES); do
 done
 
 git-auto-push $HOME/work/tools main
+tools-get-files-verify
