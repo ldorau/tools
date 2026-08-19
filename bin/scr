@@ -20,7 +20,8 @@ function print_list() {
 		DESC=$(grep -e "$name" $CONFIG | tee -a $TMP | cut -d' ' -f2-)
 		echo "$line" | grep -q -e "Attached" && ATT="(+)" || ATT="( )"
 		line=$(echo "$line" | sed 's/Detached/ /g' | sed 's/Attached/\+/g' | sed "s/\.$HOSTNAME//g")
-		echo -e "$DTN: $ATT \"$DESC\" \t $line"
+		COL=$(echo "$DTN: $ATT \"$DESC\"                                             " | cut -c1-30)
+		echo "$COL $line"
 		DTN=$(($DTN + 1))
 	done
 	[ -f $TMP ] && mv $TMP $CONFIG
