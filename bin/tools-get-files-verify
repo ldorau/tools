@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TOOLS=$HOME/work/tools/bin
+MYTOOLS=$HOME/work/mytools/bin
 
 TMP=/tmp/tmp.$$
 TMP_2=/tmp/tmp.$$-2
@@ -23,4 +24,17 @@ done
 
 [ ! -f $TMP_2 ] && echo "All is OK." && exit 0
 
-echo "Missing files:" && cat $TMP_2 && rm -f $TMP_2
+echo "Removing from $TOOLS files missing in $MYTOOLS:"
+cat $TMP_2
+cd $HOME/work/tools
+for file in $(cat $TMP_2); do
+	if [ -f $TOOLS/$file -a ! -f $MYTOOLS/$file ]; then
+		echo "Removing: $TOOLS/$file ..."
+		rm -v $TOOLS/$file
+		git add ./bin/$file
+	fi
+done
+
+git-auto-push $HOME/work/tools main
+
+rm -f $TMP_2
