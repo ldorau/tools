@@ -9,8 +9,12 @@ rm ./otodom/ogloszenia/*
 rm ./trojmiasto/ogloszenia/*
 rm ./*/ogloszenia/*
 
-szukaj_domu.py --no-email >  ./szukaj_domu.txt 2>&1
+rm -f ./szukaj_domu.txt
+
 szukaj_domu.py --no-email >> ./szukaj_domu.txt 2>&1
+echo "                  " >> ./szukaj_domu.txt
+szukaj_domu.py --no-email >> ./szukaj_domu.txt 2>&1
+echo "                  " >> ./szukaj_domu.txt
 szukaj_domu.py --no-email >> ./szukaj_domu.txt 2>&1
 
 git add ./szukaj_domu.txt
