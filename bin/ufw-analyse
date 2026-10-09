@@ -46,7 +46,9 @@ fi
 for n in $(cat $TMP | cut -d']' -f 2- | awk '{print $4}' | cut -d. -f${N_TOKENS} | sort -n | uniq); do
 	N=$(cat $TMP | grep -c -e "[^.0-9]$n\.")
 	[ $N -lt $MAX ] && continue
-	echo "IP starting from $n: $N"
+	IPS=$(cat $TMP | grep -e "[^.0-9]$n\." | grep -e "DENY" | cut -d']' -f2- | awk '{print $4}' | grep -e ^$n. | xargs)
+	COMMON=$(python3 $HOME/work/mytools/bin/common_supernet.py $IPS)
+	echo "IP starting from $n: $N (common: $COMMON)"
 	cat $TMP | grep -e "[^.0-9]$n\."
 	if [ "$2" = "d" -a "$3" = "$n" ]; then
 		DELETE=$(cat $TMP | grep -e "[^.0-9]$n\." | cut -d'[' -f2 | cut -d']' -f1 | awk '{print $1}' | sort -n -r | head -n-1 | xargs)
