@@ -1,0 +1,104 @@
+========== LAPTOP / SYSTEM ==========
+   Static hostname: oldasus
+         Icon name: computer-laptop
+           Chassis: laptop
+        Machine ID: 832e1642d2ee48408ed11b26395f7a0d
+           Boot ID: 3fc417d68309428a8941c444076784eb
+  Operating System: Ubuntu 20.04.6 LTS
+            Kernel: Linux 5.15.0-139-generic
+      Architecture: x86-64
+
+========== CPU ==========
+Architecture:                         x86_64
+CPU(s):                               4
+On-line CPU(s) list:                  0-3
+Thread(s) per core:                   2
+Core(s) per socket:                   2
+Socket(s):                            1
+Model name:                           Intel(R) Core(TM) i3-4005U CPU @ 1.70GHz
+CPU MHz:                              1064.775
+CPU max MHz:                          1600,0000
+CPU min MHz:                          800,0000
+NUMA node0 CPU(s):                    0-3
+
+========== RAM ==========
+              total        used        free      shared  buff/cache   available
+Mem:          3,7Gi       1,2Gi       330Mi       191Mi       2,2Gi       2,1Gi
+Swap:         8,0Gi       248Mi       7,8Gi
+
+========== DISKS ==========
+NAME     SIZE TYPE ROTA FSTYPE   MOUNTPOINT                   MODEL
+loop0      4K loop    1 squashfs /snap/bare/5                 
+loop1     74M loop    1          /snap/core22/2955            
+loop2   63,8M loop    1 squashfs /snap/core20/2769            
+loop3   55,5M loop    1 squashfs /snap/core18/2999            
+loop4   63,8M loop    1 squashfs /snap/core20/2866            
+loop6     74M loop    1 squashfs /snap/core22/2411            
+loop7   66,9M loop    1 squashfs /snap/core24/1587            
+loop8   66,8M loop    1 squashfs /snap/core24/1643            
+loop9    5,2M loop    1 squashfs /snap/curl/2414              
+loop10   5,2M loop    1 squashfs /snap/curl/2421              
+loop11 218,4M loop    1 squashfs /snap/gnome-3-34-1804/90     
+loop12 218,4M loop    1 squashfs /snap/gnome-3-34-1804/93     
+loop13 349,7M loop    1 squashfs /snap/gnome-3-38-2004/140    
+loop14 349,7M loop    1 squashfs /snap/gnome-3-38-2004/143    
+loop15 531,4M loop    1 squashfs /snap/gnome-42-2204/247      
+loop16 531,5M loop    1 squashfs /snap/gnome-42-2204/263      
+loop17  81,3M loop    1 squashfs /snap/gtk-common-themes/1534 
+loop18  91,7M loop    1 squashfs /snap/gtk-common-themes/1535 
+loop19  12,9M loop    1 squashfs /snap/snap-store/1113        
+loop20  12,2M loop    1 squashfs /snap/snap-store/1216        
+loop21  48,4M loop    1 squashfs /snap/snapd/26382            
+loop22  49,3M loop    1 squashfs /snap/snapd/26865            
+loop23 321,1M loop    1 squashfs /snap/vlc/3721               
+loop24 321,1M loop    1 squashfs /snap/vlc/3777               
+loop25  55,5M loop    1          /snap/core18/3084            
+sda    931,5G disk    1                                       HGST_HTS541010A9E680
+├─sda1   512M part    1 vfat     /boot/efi                    
+├─sda2     8G part    1 swap     [SWAP]                       
+├─sda3    50G part    1 ext4                                  
+├─sda4   511M part    1 vfat                                  
+├─sda5 558,9G part    1 ntfs                                  
+├─sda6    50G part    1 ext4     /                            
+└─sda7 263,6G part    1                                       
+
+========== GRAPHICS ==========
+00:02.0 VGA compatible controller: Intel Corporation Haswell-ULT Integrated Graphics Controller (rev 0b)
+04:00.0 3D controller: NVIDIA Corporation GK208BM [GeForce 920M] (rev a1)
+
+========== GRAPHICS DETAILS ==========
+  *-display
+       description: VGA compatible controller
+       product: Haswell-ULT Integrated Graphics Controller
+       vendor: Intel Corporation
+       physical id: 2
+       bus info: pci@0000:00:02.0
+       version: 0b
+       width: 64 bits
+       clock: 33MHz
+       capabilities: msi pm vga_controller bus_master cap_list rom
+       configuration: driver=i915 latency=0
+       resources: irq:48 memory:99400000-997fffff memory:a0000000-afffffff ioport:5000(size=64) memory:c0000-dffff
+  *-display UNCLAIMED
+       description: 3D controller
+       product: GK208BM [GeForce 920M]
+       vendor: NVIDIA Corporation
+       physical id: 0
+       bus info: pci@0000:04:00.0
+       version: a1
+       width: 64 bits
+       clock: 33MHz
+       capabilities: pm msi pciexpress bus_master cap_list
+       configuration: latency=0
+       resources: memory:98000000-98ffffff memory:b0000000-bfffffff memory:c0000000-c1ffffff ioport:3000(size=128) memory:99000000-9907ffff
+
+========== OS VERSION ==========
+PRETTY_NAME="Ubuntu 20.04.6 LTS"
+VERSION_ID="20.04"
+
+========== 32/64-BIT ==========
+64
+
+========== SWAP ==========
+NAME      TYPE      SIZE   USED PRIO
+/dev/sda2 partition   8G 248,3M   -2

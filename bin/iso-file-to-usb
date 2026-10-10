@@ -22,8 +22,8 @@ read -n1 resp
 echo
 echo
 if [ "$resp" == "y" ]; then
+	echo "will start in 3 seconds ..."
+	sleep 3
+	sudo dd bs=4M if=$1 of=/dev/sd$2 status=progress oflag=sync
 fi
-echo "will start in 3 seconds ..."
-sleep 3
-sudo dd bs=4M if=$1 of=/dev/sd$2 status=progress oflag=sync
 
