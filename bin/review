@@ -93,6 +93,10 @@ else
 		exit 0
 	fi
 
+	if [ "$USER" = "$BRANCH" ]; then
+		USER=""
+	fi
+
 	[ "$REPO" == "" ] && REPO=$(git-get-current-repo)
 
 	echo "USER   = $USER"
@@ -100,16 +104,25 @@ else
 	echo "REPO   = $REPO"
 
 	NEW_BRANCH=review_$USER_$BRANCH
-
 	run_command git commit -a
-	run_command git checkout $(git-get-default-branch)
-	run_command git branch   -D $NEW_BRANCH 2>/dev/null
-	run_command git checkout -b $NEW_BRANCH
 
-	run_command git fetch https://github.com/$USER/$REPO $BRANCH || run_command git fetch $USER $BRANCH
-	if [ $? -ne 0 ]; then
-		echo Error: cannot fetch branch $BRANCH from https://github.com/$USER/$REPO
-		do_on_error
+	if [ "$(git-get-current-branch)" != "$NEW_BRANCH" ]; then
+		run_command git branch   -D $NEW_BRANCH 2>/dev/null
+		run_command git checkout -b $NEW_BRANCH
+	fi
+
+	if [ "$USER" != "" ]; then
+		run_command git fetch https://github.com/$USER/$REPO $BRANCH || run_command git fetch $USER $BRANCH
+		if [ $? -ne 0 ]; then
+			echo Error: cannot fetch branch $BRANCH from https://github.com/$USER/$REPO
+			do_on_error
+		fi
+	else
+		run_command git fetch upstream $BRANCH
+		if [ $? -ne 0 ]; then
+			echo Error: cannot fetch branch $BRANCH from upstream repo
+			do_on_error
+		fi
 	fi
 
 	run_command git reset --hard FETCH_HEAD
@@ -117,10 +130,6 @@ else
 		echo Error: cannot reset to FETCH_HEAD
 		do_on_error
 	fi
-
-	CB_NEW=$(git-get-current-branch)
-	git checkout $CB_ORG >/dev/null
-	git checkout $CB_NEW >/dev/null
 
 	echo
 	echo "The last commit:"
