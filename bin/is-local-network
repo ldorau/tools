@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ "$(which ifconfig 2>/dev/null)" != "" ]; then
+	ifconfig | grep -q -e "192.168" && exit 0
+fi
+
+if [ "$(which ip 2>/dev/null)" != "" ]; then
+	ip a | grep -q -e "192.168" && exit 0
+fi
+
+exit 1

@@ -1,0 +1,19 @@
+#!/bin/bash
+
+TOOLS=$HOME/work/mytools
+[ ! -d $TOOLS ] && TOOLS=$HOME/work/tools
+if [ ! -d $TOOLS ]; then
+	echo "Error: no tools found!"
+	exit 1
+fi
+
+OLD_WD=$(pwd)
+
+cd $TOOLS
+git fetch --all
+BR=$(git branch | grep -e "*" | cut -c 3-)
+git reset --hard origin/$BR
+
+cd $OLD_WD
+
+echo "Done."

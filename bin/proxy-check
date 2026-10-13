@@ -1,6 +1,7 @@
 #!/bin/bash
 
 [ "$(whoami)" = "pi" ] && exit 0
+is-local-network && exit 0
 
 WD=$(dirname $0)
 

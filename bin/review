@@ -85,7 +85,7 @@ else
 		fi
 		USER=$(echo $ARG1 | cut -d'/' -f4)
 		REPO=$(echo $ARG1 | cut -d'/' -f5)
-		BRANCH=$(echo $ARG1 | cut -d'/' -f7)
+		BRANCH=$(echo $ARG1 | cut -d'/' -f7-)
 	fi
 
 	if [[ "$USER" == "" || "$USER" == "http" || "$USER" == "https" || "$BRANCH" == "" ]]; then
