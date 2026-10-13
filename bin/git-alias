@@ -1,6 +1,14 @@
 #!/bin/bash
 
-TOOLS=$(dirname $(realpath $(which git-alias)))
+GIT_ALIAS=$(which git-alias)
+if [ "$GIT_ALIAS" = "" ]; then
+	if [[ "$0" = *"bash"* ]]; then
+		[ -x ~/work/tools/bin/git-alias ] && GIT_ALIAS=$HOME/work/tools/bin/git-alias
+		[ -x ~/work/mytools/bin/git-alias ] && GIT_ALIAS=$HOME/work/mytools/bin/git-alias
+	fi
+fi
+
+TOOLS=$(dirname $(realpath $GIT_ALIAS))
 alias ed="$TOOLS/ed"
 
 alias date-git='date +"%a %b %-d %H:%M:%S %Y %z"'
