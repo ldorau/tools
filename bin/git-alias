@@ -3,10 +3,14 @@
 GIT_ALIAS=$(which git-alias)
 if [ "$GIT_ALIAS" = "" ]; then
 	if [[ "$0" = *"bash"* ]]; then
-		[ -x ~/work/tools/bin/git-alias ] && GIT_ALIAS=$HOME/work/tools/bin/git-alias
-		[ -x ~/work/mytools/bin/git-alias ] && GIT_ALIAS=$HOME/work/mytools/bin/git-alias
+		TRY1=$HOME/work/tools/bin/git-alias && [ -x $TRY1 ] && GIT_ALIAS=$TRY1
+		TRY2=$HOME/work/mytools/bin/git-alias && [ -x $TRY2 ] && GIT_ALIAS=$TRY2
+	else
+		GIT_ALIAS=$0
 	fi
 fi
+
+echo "git-alias: $GIT_ALIAS"
 
 TOOLS=$(dirname $(realpath $GIT_ALIAS))
 alias ed="$TOOLS/ed"
