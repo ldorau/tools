@@ -42,6 +42,13 @@
 #   ./build_igc.sh releases/2.38.x $HOME/my_prefix
 #   ./build_igc.sh v2.38.5 $HOME/my_prefix Debug
 #
+# Environment:
+#   BUILD_TMPDIR  directory in which the temporary work directory is created
+#                 (default: mktemp's default, i.e. $TMPDIR or /tmp). Set it to
+#                 a disk-backed directory when /tmp is a size-limited tmpfs,
+#                 e.g. BUILD_TMPDIR=$HOME/tmp. The directory is created if
+#                 needed. It is inherited by the scripts called from this one.
+#
 # Releases can be found at:
 #   https://github.com/intel/intel-graphics-compiler/releases
 
@@ -81,7 +88,13 @@ fi
 
 # All intermediate build artifacts go into a temporary directory that is
 # printed at the end so the user can clean it up manually if desired.
-WORKDIR="$(mktemp -d)"
+# BUILD_TMPDIR (optional) overrides the parent directory of WORKDIR.
+if [ -n "${BUILD_TMPDIR:-}" ]; then
+    mkdir -p "${BUILD_TMPDIR}"
+    WORKDIR="$(mktemp -d -p "${BUILD_TMPDIR}")"
+else
+    WORKDIR="$(mktemp -d)"
+fi
 NPROC="$(nproc)"
 
 echo "=== Building IGC ref: ${IGC_REF} ==="

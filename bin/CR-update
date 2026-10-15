@@ -53,3 +53,15 @@ if [ $? -ne 0 ]; then
 	rm -rf ~/work/compute-runtime/build
 	mv "$ARCHIVE" ~/work/compute-runtime/build
 fi
+
+# lit enables the "ocloc" feature of SYCL E2E tests only if an executable
+# named exactly "ocloc" is found in PATH, but compute-runtime installs a
+# versioned one (e.g. ocloc-26.35.1), so keep ~/bin/ocloc pointing at it.
+OCLOC=$(ls ~/work/compute-runtime/build/bin/ocloc-* 2>/dev/null | sort -V | tail -n1)
+if [ -n "$OCLOC" ]; then
+	mkdir -p ~/bin
+	ln -sf "$OCLOC" ~/bin/ocloc
+	echo "Updated the ~/bin/ocloc link -> $OCLOC"
+else
+	echo "WARNING: no ocloc-* found in ~/work/compute-runtime/build/bin, ~/bin/ocloc not updated"
+fi

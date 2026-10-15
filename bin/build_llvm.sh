@@ -10,7 +10,6 @@
 # python3 ./buildbot/compile.py -s . -o ./build -t check-sycl-unittests -j 128
 #
 
-export ZE_AFFINITY_MASK=1
 export ZE_ENABLE_ALT_DRIVERS=~/workdir/compute-runtime-build/bin/libze_intel_gpu.so
 export LD_LIBRARY_PATH=~/workdir/igc-install/lib/:~/workdir/level-zero-install/lib/:$LD_LIBRARY_PATH
 
@@ -128,9 +127,9 @@ echo
 # sycl/unittests
 if [ "$1" != "skip" ]; then
 	echo "TESTING: sycl/unittests/$1"
-	echo "$ ./build/bin/llvm-lit -v -j $NPROC --param \"sycl_devices=level_zero_v2:gpu\" ./sycl/unittests/$1"
+	echo "$ ./build/bin/llvm-lit -v -a -j $NPROC --param \"sycl_devices=level_zero_v2:gpu\" ./sycl/unittests/$1"
 	cd $SOURCE_DIR
-	env UR_LOADER_USE_LEVEL_ZERO_V2=1 ./build/bin/llvm-lit -v -j $NPROC --param "sycl_devices=level_zero_v2:gpu" ./sycl/unittests/$1
+	env UR_LOADER_USE_LEVEL_ZERO_V2=1 ./build/bin/llvm-lit -v -a -j $NPROC --param "sycl_devices=level_zero_v2:gpu" ./sycl/unittests/$1
 else
 	echo "SKIPPED tests: sycl/unittests/"
 fi
@@ -140,9 +139,9 @@ echo
 # build_target -t check-sycl
 if [ "$2" != "skip" ]; then
 	echo "TESTING: sycl/test/$2"
-	echo "$ ./build/bin/llvm-lit -v -j $NPROC --param \"sycl_devices=level_zero_v2:gpu\" ./sycl/test/$2"
+	echo "$ ./build/bin/llvm-lit -v -a -j $NPROC --param \"sycl_devices=level_zero_v2:gpu\" ./sycl/test/$2"
 	cd $SOURCE_DIR
-	env UR_LOADER_USE_LEVEL_ZERO_V2=1 ./build/bin/llvm-lit -v -j $NPROC --param "sycl_devices=level_zero_v2:gpu" ./sycl/test/$2
+	env UR_LOADER_USE_LEVEL_ZERO_V2=1 ./build/bin/llvm-lit -v -a -j $NPROC --param "sycl_devices=level_zero_v2:gpu" ./sycl/test/$2
 else
 	echo "SKIPPED tests: sycl/test/"
 fi
@@ -151,9 +150,9 @@ echo
 
 if [ "$3" != "skip" ]; then
 	echo "TESTING: sycl/test-e2e/$3"
-	echo "$ ./build/bin/llvm-lit -v -j $NPROC --param \"sycl_devices=level_zero_v2:gpu\" ./sycl/test-e2e/$3"
+	echo "$ ./build/bin/llvm-lit -v -a -j $NPROC --param \"sycl_devices=level_zero_v2:gpu\" --param test-preview-mode=True --param extra_system_environment=ZE_AFFINITY_MASK ./sycl/test-e2e/$3"
 	cd $SOURCE_DIR
-	env UR_LOADER_USE_LEVEL_ZERO_V2=1 ./build/bin/llvm-lit -v -j $NPROC --param "sycl_devices=level_zero_v2:gpu" ./sycl/test-e2e/$3
+	env UR_LOADER_USE_LEVEL_ZERO_V2=1 ./build/bin/llvm-lit -v -a -j $NPROC --param "sycl_devices=level_zero_v2:gpu" --param test-preview-mode=True --param extra_system_environment=ZE_AFFINITY_MASK ./sycl/test-e2e/$3
 else
 	echo "SKIPPED tests: sycl/test-e2e/"
 fi

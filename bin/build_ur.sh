@@ -40,7 +40,7 @@ cmake --build . -j $NPROC
 
 # cmake --build . -j $NPROC -- check-unified-runtime-conformance
 # echo ">>> conformance L0v1"
-# $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param "selector=level_zero:*" ./test/conformance/
+# $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -a -j $NPROC --param "selector=level_zero:*" ./test/conformance/
 echo "#######################################################################################################"
 echo ">>> conformance L0v2"
 # Deliberately do NOT inherit the caller's LD_LIBRARY_PATH here. The freshly
@@ -53,17 +53,17 @@ echo ">>> conformance L0v2"
 # ur_dditable_t ABI into this loader causes urDeviceGet (and others) to jump
 # through a garbage function pointer and segfault, which is why nearly every
 # conformance test was failing/unresolved.
-echo "+ LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param selector=level_zero:* ./test/conformance/"
-LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param selector=level_zero:* ./test/conformance/
+echo "+ LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -a -j $NPROC --param selector=level_zero:* ./test/conformance/"
+LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -a -j $NPROC --param selector=level_zero:* ./test/conformance/
 echo "#######################################################################################################"
 
 # cmake --build . -j $NPROC -- check-unified-runtime-adapter
 # echo ">>> adapters L0v1"
-# $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param "selector=level_zero:*" ./test/adapters/
+# $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -a -j $NPROC --param "selector=level_zero:*" ./test/adapters/
 echo "#######################################################################################################"
 echo ">>> adapters L0v2"
-echo "+ LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param selector=level_zero:* ./test/adapters/"
-LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -j $NPROC --param selector=level_zero:* ./test/adapters/
+echo "+ LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -a -j $NPROC --param selector=level_zero:* ./test/adapters/"
+LD_LIBRARY_PATH=$HOME/work/llvm/unified-runtime/build/lib UR_LOADER_USE_LEVEL_ZERO_V2=1 ZES_ENABLE_SYSMAN=1 $GITHUB_WORKSPACE/llvm/build/bin/llvm-lit -v -a -j $NPROC --param selector=level_zero:* ./test/adapters/
 echo "#######################################################################################################"
 
 exit 0

@@ -20,15 +20,18 @@ function remove_branches() {
 	done
 }
 
+SKIP_CURRENT=0
+
 PATTERNS="$*"
 
 for PATTERN in $PATTERNS; do
-	BRANCHES=`git branch | grep $PATTERN | xargs`
-	remove_branches $BRANCHES
-	BRANCHES=`git branch -a | grep $PATTERN | xargs`
+	git-get-current-branch | grep -q -e $PATTERN && SKIP_CURRENT=1
+	BRANCHES=`git branch | grep $PATTERN | grep -v -e "$(git-get-current-branch)" | xargs`
 	remove_branches $BRANCHES
 done
 
 git checkout $OLD_BR
+
+[ $SKIP_CURRENT -eq 1 ] && echo "Skipped the current branch: $(git-get-current-branch)"
 
 echo "Done."

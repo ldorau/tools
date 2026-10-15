@@ -33,6 +33,13 @@
 #   ./build_level_zero_loader.sh v1.24.1 $HOME/my_prefix
 #   ./build_level_zero_loader.sh v1.24.1 $HOME/my_prefix Debug
 #
+# Environment:
+#   BUILD_TMPDIR  directory in which the temporary work directory is created
+#                 (default: mktemp's default, i.e. $TMPDIR or /tmp). Set it to
+#                 a disk-backed directory when /tmp is a size-limited tmpfs,
+#                 e.g. BUILD_TMPDIR=$HOME/tmp. The directory is created if
+#                 needed. It is inherited by the scripts called from this one.
+#
 # The latest release tag can be found at:
 #   https://github.com/oneapi-src/level-zero/releases/latest
 
@@ -79,7 +86,13 @@ fi
 
 # All intermediate build artifacts go into a temporary directory that is
 # printed at the end so the user can clean it up manually if desired.
-WORKDIR="$(mktemp -d)"
+# BUILD_TMPDIR (optional) overrides the parent directory of WORKDIR.
+if [ -n "${BUILD_TMPDIR:-}" ]; then
+    mkdir -p "${BUILD_TMPDIR}"
+    WORKDIR="$(mktemp -d -p "${BUILD_TMPDIR}")"
+else
+    WORKDIR="$(mktemp -d)"
+fi
 NPROC="$(nproc)"
 
 echo "=== Building level-zero loader tag: ${TAG} ==="
