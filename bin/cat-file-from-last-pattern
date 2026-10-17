@@ -1,0 +1,11 @@
+#!/bin/bash
+
+FILE=$1
+PATTERN=$2
+
+if [ ! -f $FILE ]; then
+	echo "Error: file $FILE not found"
+	exit 1
+fi
+
+tac $FILE | sed "/$PATTERN/q" | tac

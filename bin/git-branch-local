@@ -11,7 +11,7 @@ WD=$(dirname $0)
 REMOTE=`echo $1 | cut -d"/" -f1`
 BRANCH=`echo $1 | cut -d"/" -f2`
 
-run_command git fetch $REMOTE
+run_command git fetch $REMOTE $BRANCH
 run_command git branch $BRANCH --track $REMOTE/$BRANCH
 run_command git checkout $BRANCH
 run_command git reset --hard $REMOTE/$BRANCH

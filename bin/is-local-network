@@ -1,11 +1,15 @@
 #!/bin/bash
 
+function grep_inet() {
+	grep -v -e "inet 192.168." -e "inet 127.0.0.1" | grep -q -e "inet "
+}
+
 if [ "$(which ifconfig 2>/dev/null)" != "" ]; then
-	ifconfig | grep -q -e "192.168" && exit 0
+	ifconfig | grep_inet && exit 1
 fi
 
 if [ "$(which ip 2>/dev/null)" != "" ]; then
-	ip a | grep -q -e "192.168" && exit 0
+	ip a | grep_inet && exit 1
 fi
 
-exit 1
+exit 0
