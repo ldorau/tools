@@ -1,0 +1,65 @@
+#!/bin/bash -e
+
+export PKG_CONFIG_PATH=~/work/rdma-core/build/lib/pkgconfig
+export LD_LIBRARY_PATH=~/work/rdma-core/build/lib
+export CPATH=~/work/rdma-core/build/include
+
+WD=~/work/rpma/build
+
+DOC=OFF
+EXMPLS=ON
+TESTS=ON
+RDMA=ON
+EX=0
+VLG=0
+for arg in $*; do
+	case $arg in
+	doc)
+		DOC=ON
+		;;
+	ex)
+		EX=1
+		;;
+	rpma)
+		EXMPLS=OFF
+		TESTS=OFF
+		;;
+	vlg)
+		VLG=1
+		;;
+	notests)
+		TESTS=OFF
+		;;
+	nordma)
+		RDMA=OFF
+		;;
+	esac
+done
+
+mkdir -p $WD
+cd $WD
+
+set -x
+
+cmake .. -DBUILD_DOC=${DOC} -DBUILD_EXAMPLES=${EXMPLS} -DBUILD_TESTS=${TESTS} -DCMAKE_BUILD_TYPE=Debug -DBUILD_DEVELOPER_MODE=ON -DCMAKE_INSTALL_PREFIX=/usr -DTESTS_RDMA_CONNECTION=${RDMA}
+
+if [ "$RDMA" == "ON" ]; then
+	make config_softroce
+	export RPMA_TESTING_IP=$(make config_softroce | grep -e '- network interface' | cut -d: -f3 | cut -c2-)
+	echo RPMA_TESTING_IP=$RPMA_TESTING_IP
+fi
+
+# run cmake again with RPMA_TESTING_IP set
+cmake ..
+
+CC=$CC make -j$(nproc)
+[ "${TESTS}" == "OFF" ] && exit 0
+ctest --output-on-failure -R none
+set +x
+echo
+[ $EX -eq 1 ] && make run_all_examples || echo "NOTICE: to run all examples add the 'ex' option"
+echo
+[ $VLG -eq 1 ] && make run_all_examples_under_valgrind || echo "NOTICE: to run all examples under valgrind add the 'vlg' option"
+echo
+[ "$DOC" == "OFF" ] && echo "NOTICE: to build documentation add the 'doc' option"
+

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+if [ "$1" == "" ]; then
+
+	#rm -rf ../.temp-dir-git
+	#mv -f .git ../.temp-dir-git 2>/dev/null
+	 
+	FILES=$(find . -type f | xargs)
+	for f in $FILES; do
+		LIC=$(cat $f | grep -e "Copyright" | grep -e "Intel Corporation")
+		[ "$LIC" != "" ] && echo "$f:$LIC:"
+		# NEW_NAME=$(echo $f | sed "s/$1/$2/g")
+	done
+
+	#mv -f ../.temp-dir-git .git 2>/dev/null
+
+else
+
+	FILES=$(find . -type f | xargs)
+	for f in $FILES; do
+		LINE=$(grep -e "$f" $1)
+		[ "$LINE" == "" ] && continue
+		FILE=$(echo "$LINE" | cut -d: -f1)
+		[ "$f" != "$FILE" ] && continue
+		LIC_NEW=$(echo "$LINE" | cut -d: -f2)
+		LIC_OLD=$(cat $f | grep -e "Copyright" | grep -e "Intel Corporation")
+		sed -i "s/$LIC_OLD/$LIC_NEW/g" $f
+	done
+fi
+

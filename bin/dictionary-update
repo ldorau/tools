@@ -1,0 +1,132 @@
+#!/bin/bash
+
+WORK_DIR=`pwd`
+
+REPO_DIR=`echo $0 | sed "s/\/[^\/]\+$//g" `
+[ "$REPO_DIR" == "." ] && REPO_DIR=$WORK_DIR
+
+if [ "`aspell -v 2>/dev/null`" == "" ]; then
+        echo "Error: aspell is not installed. Exiting."
+        exit 1
+fi
+
+if [ "$1" == "" ]; then
+	echo "Usage: $0 <NVML-git-repo-directory> [fix]"
+        exit 1
+fi
+
+NVML_DIR=$1 && [ "$NVML_DIR" == "." ] && NVML_DIR=$WORK_DIR
+
+if [ ! -d $NVML_DIR ]; then
+        echo "Directory $NVML_DIR does not exist. Exiting."
+        exit 1
+else
+        if [ ! -d $NVML_DIR/.git  ]; then
+                echo "Directory $NVML_DIR is not a git repository. Exiting."
+                exit 1
+        fi
+fi
+
+if [ "$2" == "fix" ]; then
+	FIX=1
+else
+	FIX=0
+fi
+
+DIC_PATH=/mnt/files/work/nvml_tools/spell-checker
+DICTIONARY=$DIC_PATH/spell-checker-dictionary
+
+if [ ! -f $DICTIONARY ]; then
+	echo "Error: cannot find the dictionary file: $DICTIONARY. Exiting ..."
+        exit 1
+fi
+echo "Dictionary: $DICTIONARY"
+
+# temporary files
+TEMP_PATTERN=/tmp/spell-check-temp-file-$$
+REMOVED_WORDS=$TEMP_PATTERN-1
+NEW_DICTIONARY=$TEMP_PATTERN-2
+OUT=$TEMP_PATTERN-3
+COMMENTS=$TEMP_PATTERN-4
+COMMENTS_LINES=$TEMP_PATTERN-5
+rm -f $TEMP_PATTERN-*
+
+# gather files
+cd $NVML_DIR
+
+TEXT_FILES=`git ls-tree -r --name-only HEAD | \
+        grep -E -e '*\.[13]' -e 'README*' | xargs`
+
+CODE_FILES=`git ls-tree -r --name-only HEAD | \
+        grep    -E -e '*\.[ch]' -e '*\.py' -e '*\.sh' -e 'Makefile*' -e 'TEST*' -e 'src/test/match' | \
+        grep -v    -e 'src/jemalloc' -e 'testconfig.sh' -e 'jemalloc.cfg' | xargs`
+
+ALL_FILES="$TEXT_FILES $CODE_FILES"
+CHECK_FILES=$TEXT_FILES
+
+# extract comments - begin
+if [ -d $REPO_DIR ]; then
+        cd $REPO_DIR
+        make > /dev/null 2>&1
+        EXTRACT=extract-comments
+        if [ -f ./$EXTRACT ]; then
+		echo Extracting comments ...
+                EXTRACT=$REPO_DIR/$EXTRACT
+                rm -f $COMMENTS $COMMENTS_LINES
+                cd $NVML_DIR
+                for file in $CODE_FILES ; do
+                        $EXTRACT $file $COMMENTS $COMMENTS_LINES
+                done
+                CHECK_FILES="$CHECK_FILES $COMMENTS"
+		echo Comments extracted.
+        fi
+fi
+# extract comments - end
+
+if [ "$CHECK_FILES" == "" ]; then
+        echo "No NVML files found!"
+        exit 1
+fi
+
+CHANGED=0
+echo Checking words ...
+for word in $(cat $DICTIONARY | cut -d"=" -f2) ; do
+        # grep -v -P '^[ \t]*\$ ' - ignore command line examples
+        grep -v -P '^[ \t]*\$ ' $CHECK_FILES |\
+		grep "$word" |\
+		sed "s/\w$word//g" |\
+		sed "s/$word\w//g" |\
+		sed "s/[\_\.\'\<\^\/]$word//g" |\
+		sed "s/$word[\_\'\>\^\/\(]//g" |\
+		sed "s/$word\.\w//g" > $OUT
+        grep "$word" $OUT > /dev/null
+	if [ $? -ne 0 ]; then
+		# This word will be removed
+		echo "=$word=" >> $REMOVED_WORDS
+		CHANGED=1
+	else
+		# This word will remain
+		echo "=$word=" >> $NEW_DICTIONARY
+	fi
+        # NUM=$(grep "$word" $FILES | grep -E -e "\_$word" -e "$word\_" | wc -l)
+        # if [ $NUM -gt 0 ]; then
+        #        echo "$word: $NUM"
+        # fi
+done
+
+if [ "$CHANGED" == "1" ]; then
+	if [ $FIX -eq 1 ]; then
+		mv $NEW_DICTIONARY $DICTIONARY
+		dictionary-sort $DICTIONARY
+		echo "These words have been removed from the dictionary $DICTIONARY:"
+	else
+		echo "These words would be removed from the dictionary $DICTIONARY:"
+	fi
+	cat $REMOVED_WORDS
+else
+	echo "Dictionary is up-to-date ($DICTIONARY)."
+fi
+
+
+rm -f $REMOVED_WORDS $NEW_DICTIONARY
+

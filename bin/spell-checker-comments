@@ -1,0 +1,122 @@
+#!/bin/bash
+
+EXTRACT=~/bin/extract-comments
+
+if [ "`aspell -v 2>/dev/null`" == "" ]; then
+	echo "Error: aspell is not installed. Exiting..."
+	exit 1
+fi
+
+if [ ! -f $EXTRACT ]; then
+	echo "Error: $EXTRACT is not installed. Exiting..."
+	exit 1
+fi
+
+if [ "$1" == "" ]; then
+        echo "Usage: $0 <NVML-git-repo-directory> [path-to-dictionary]"
+        exit 1
+fi
+
+NVML_DIR=$1
+
+if [ ! -d $NVML_DIR ]; then
+        echo "Directory $NVML_DIR does not exist. Exiting."
+        exit 1
+else
+        if [ ! -d $NVML_DIR/.git  ]; then
+                echo "Directory $NVML_DIR is not a git repository. Exiting."
+                exit 1
+        fi
+fi
+
+cd $NVML_DIR
+
+DIC_PATH=$2
+if [ "$DIC_PATH" == "" ]; then
+	DIC_PATH="."
+fi
+DICTIONARY=$DIC_PATH/spell-checker-dictionary
+
+if [ ! -f $DICTIONARY ]; then
+	echo "Error: cannot find the dictionary file: $DICTIONARY. Exiting..."
+        exit 1
+fi
+
+# temporary files
+TEMP_PATTERN=/tmp/spell-check-temp-file
+ALL_LINES=$TEMP_PATTERN-$$-1
+ALL_WORDS=$TEMP_PATTERN-$$-2
+UNIQ_WORDS=$TEMP_PATTERN-$$-3
+FOUND_WORDS=$TEMP_PATTERN-$$-4
+ERROR_OUT=$TEMP_PATTERN-$$-5
+
+# gather files
+#        grep    -E -e '*\.[ch]' -e '*\.py' -e '*\.sh' -e 'Makefile*' -e 'TEST*' -e '*\.[12345]' -e 'src/test/match' | \
+FILES=`git ls-tree -r --name-only HEAD | \
+        grep    -E -e '*\.[ch]' -e '*\.py' -e '*\.sh' -e 'Makefile*' -e 'TEST*' -e 'src/test/match' | \
+        grep -v    -e 'src/jemalloc' -e 'testconfig.sh' -e 'jemalloc.cfg' | xargs`
+
+if [ "$FILES" == "" ]; then
+        echo "Spell-checker status is: SUCCESSFUL"
+        exit 0
+fi
+
+COMMENTS=/tmp/comments-$$
+COMMENTS_LINES=/tmp/comments-lines-$$
+OUT=/tmp/comments-out-$$
+
+rm -f $COMMENTS $COMMENTS_LINES
+for file in $FILES ; do
+	$EXTRACT $file $COMMENTS $COMMENTS_LINES
+done
+
+ERRORS=0
+file=$COMMENTS
+
+	FILE=$file
+
+        # check spelling using Aspell
+        echo > $ERROR_OUT
+        aspell -a --ignore-case --dont-suggest -l en_US  < $FILE 2>$ERROR_OUT \
+                | grep " " | grep -v "International Ispell Version" > $ALL_LINES
+
+        if [ "`cat $ALL_LINES`" == "" -a "`cat $ERROR_OUT`" != "" ]; then
+                echo "Aspell error in the file $file:"
+                cat $ERROR_OUT
+        fi
+
+	# cut out words
+	cat $ALL_LINES | cut -d" " -f2 > $ALL_WORDS
+	cat $ALL_WORDS | sort | uniq > $UNIQ_WORDS
+	rm -f $FOUND_WORDS
+
+	for word in $(cat $UNIQ_WORDS) ; do
+                grep "$word" $FILE | sed "s/\S$word//g" | sed "s/$word\S//g" > $OUT
+	        grep "$word" $OUT 2>&1 > /dev/null
+		if [ $? -eq 0 ]; then
+			# look up words in our own dictionary
+		        grep "=$word=" $DICTIONARY 2>&1 > /dev/null
+		        if [ $? -ne 0 ]; then
+		                echo $word >> $FOUND_WORDS
+			fi
+		fi
+	done
+
+	if [ -f $FOUND_WORDS ]; then
+		ERRORS=1
+		for word in $(cat $FOUND_WORDS | sort) ; do
+		        echo "Found potential spelling error ('$word') in the file(s):"
+		        grep $word $COMMENTS_LINES
+			echo
+		done
+	fi
+        rm -f $TEMP_PATTERN-*
+
+
+if [ $ERRORS -eq 0 ]; then
+        echo "Spell-checker status is: SUCCESSFUL"
+	exit 0
+else
+        echo "Spell-checker status is: potential spelling errors found"
+	exit 1
+fi

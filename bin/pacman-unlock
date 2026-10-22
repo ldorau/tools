@@ -1,0 +1,3 @@
+#!/bin/bash -x
+
+sudo rm /var/lib/pacman/db.lck

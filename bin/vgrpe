@@ -1,0 +1,38 @@
+#!/bin/bash
+# edit with vim all files: grep all files recursively except .git/
+
+set -e
+
+STOP_FILE=/tmp/temp-stop-vgrp
+rm -f $STOP_FILE
+
+ALL_ARGS="$@"
+PATTERN="$1"
+
+FILES=/tmp/temp-vgrp-files-$$
+DONE=/tmp/temp-vgrp-files-done-$$
+touch $DONE
+
+function update_files() {
+	grp $ALL_ARGS | cut -d: -f1-2 > $FILES
+	cat $DONE | \
+	while IFS='' read -r line || [[ -n "$line" ]]; do
+		N=$(grep -E -n -e "$line" $FILES | cut -d: -f1)
+		[ "$N" != "" ] && sed -i "${N}d" $FILES
+	done
+}
+
+function get_next_file() {
+	update_files
+	FL=$(head -n1 $FILES)
+	sed -i '1d' $FILES # remove the 1st line
+	echo $FL >> $DONE
+	echo $FL
+}
+
+file=$(get_next_file)
+while [ "$file" != "" ]; do
+	v $file
+	[ -f $STOP_FILE ] && echo "Stopped!" && rm -f $STOP_FILE && exit 0
+	file=$(get_next_file)
+done

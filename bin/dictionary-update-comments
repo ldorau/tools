@@ -1,0 +1,85 @@
+#!/bin/bash
+
+if [ "$1" == "" -o ! -d "$1" ]; then
+	echo "Usage: $0 <NVML-git-repo-directory> [fix]"
+        exit 1
+fi
+NVML_DIR=$1
+
+if [ "$2" == "fix" ]; then
+	FIX=1
+else
+	FIX=0
+fi
+
+DIC_PATH=~/work/tools/comments
+DICTIONARY=$DIC_PATH/spell-checker-dictionary
+
+if [ ! -f $DICTIONARY ]; then
+	echo "Error: cannot find the dictionary file: $DICTIONARY. Exiting..."
+        exit 1
+fi
+
+# temporary files
+TEMP_PATTERN=/tmp/spell-check-temp-file
+REMOVED_WORDS=$TEMP_PATTERN-$$-1
+NEW_DICTIONARY=$TEMP_PATTERN-$$-2
+rm -f $REMOVED_WORDS $NEW_DICTIONARY
+
+# gather files
+#        grep    -E -e '*\.[ch]' -e '*\.py' -e '*\.sh' -e 'Makefile*' -e 'TEST*' -e '*\.[12345]' -e 'src/test/match' | \
+FILES=`git ls-tree -r --name-only HEAD | \
+        grep    -E -e '*\.[ch]' -e '*\.py' -e '*\.sh' -e 'Makefile*' -e 'TEST*' -e 'src/test/match' | \
+        grep -v    -e 'src/jemalloc' -e 'testconfig.sh' -e 'jemalloc.cfg' | \
+        xargs`
+
+if [ "$FILES" == "" ]; then
+        echo "Spell-checker status is: SUCCESSFUL"
+        exit 0
+fi
+
+COMMENTS=/tmp/comments
+COMMENTS_LINES=/tmp/comments-lines
+OUT=/tmp/comments-out
+
+rm -f $COMMENTS $COMMENTS_LINES $OUT
+for file in $FILES ; do
+        ~/bin/extract-comments $file $COMMENTS $COMMENTS_LINES
+done
+
+FILES=$COMMENTS
+
+CHANGED=0
+for word in $(cat $DICTIONARY | cut -d"=" -f2) ; do
+	grep "$word" $FILES | grep -e "^$word[^\_]" -e "[^\_]$word[^\_]" -e "[^\_]$word$" > $OUT
+	grep "$word" $OUT 2>&1 > /dev/null
+	if [ $? -ne 0 ]; then
+		# This word will be removed
+		echo $word >> $REMOVED_WORDS
+		CHANGED=1
+	else
+		# This word will remain
+		echo "=$word=" >> $NEW_DICTIONARY
+	fi
+	# NUM=$(grep "$word" $FILES | grep -E -e "\_$word" -e "$word\_" | wc -l)
+	# if [ $NUM -gt 0 ]; then 
+	#	echo "$word: $NUM"
+	# fi
+done
+
+if [ "$CHANGED" == "1" ]; then
+	if [ $FIX -eq 1 ]; then
+		mv $NEW_DICTIONARY $DICTIONARY
+		dictionary-sort $DICTIONARY
+		echo "These words have been removed from the dictionary $DICTIONARY:"
+	else
+		echo "These words would be removed from the dictionary $DICTIONARY:"
+	fi
+	cat $REMOVED_WORDS
+else
+	echo "Dictionary is up-to-date ($DICTIONARY)."
+fi
+
+
+rm -f $REMOVED_WORDS $NEW_DICTIONARY
+

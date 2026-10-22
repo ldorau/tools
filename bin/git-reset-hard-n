@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ "$1" == "" ]; then
+        echo "ERROR: no number given"
+        exit 0;
+else
+	echo "$ git reset --hard HEAD~$N"
+	git reset --hard HEAD~$N
+fi
+

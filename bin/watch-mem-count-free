@@ -1,0 +1,20 @@
+#!/bin/bash
+
+function pws {
+        local MAX=$1
+        local STR=$2
+        local L=$(($MAX - $(echo "$STR" | wc -c)))
+        printf ' %.0s' $(seq -s' ' $L)
+        echo -n "$STR"
+}
+
+LOG=/tmp/watch-mem
+
+UMAX=$(grep "Mem:" $LOG-free.log | sort -k 3 -nr | cut -d' ' -f19-20 | head -n1 | sed 's/ //g')
+UMIN=$(grep "Mem:" $LOG-free.log | sort -k 3 -nr | cut -d' ' -f19-20 | tail -n1 | sed 's/ //g')
+
+FMAX=$(grep "Mem:" $LOG-free.log | sort -k 4 -nr | cut -d' ' -f25-28 | head -n1 | sed 's/ //g')
+FMIN=$(grep "Mem:" $LOG-free.log | sort -k 4 -nr | cut -d' ' -f25-28 | tail -n1 | sed 's/ //g')
+
+echo -e "Used memory: max $(pws 7 ${UMAX}) MiB | min $(pws 7 ${UMIN}) MiB | max diff $(pws 5 $(($UMAX - $UMIN))) MiB"
+echo -e "Free memory: max $(pws 7 ${FMAX}) MiB | min $(pws 7 ${FMIN}) MiB | max diff $(pws 5 $(($FMAX - $FMIN))) MiB"

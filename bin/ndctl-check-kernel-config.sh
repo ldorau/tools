@@ -1,0 +1,38 @@
+#!/bin/bash
+
+RM_KEYS="\
+CONFIG_ACPI_NFIT= \
+CONFIG_X86_PMEM_LEGACY= \
+CONFIG_ZONE_DEVICE= \
+CONFIG_LIBNVDIMM= \
+CONFIG_BLK_DEV_PMEM= \
+CONFIG_ND_BLK= \
+CONFIG_BTT= \
+CONFIG_NVDIMM_PFN= \
+CONFIG_NVDIMM_DAX= \
+CONFIG_DEV_DAX_PMEM= \
+"
+
+# remove keys
+for key in $RM_KEYS; do
+	sed -i "/$key/d" .config
+	cat .config | grep -e "$key"
+done
+
+ADD_KEYS="\
+CONFIG_ACPI_NFIT=m \
+CONFIG_X86_PMEM_LEGACY=m \
+CONFIG_ZONE_DEVICE=y \
+CONFIG_LIBNVDIMM=m \
+CONFIG_BLK_DEV_PMEM=m \
+CONFIG_ND_BLK=m \
+CONFIG_BTT=y \
+CONFIG_NVDIMM_PFN=y \
+CONFIG_NVDIMM_DAX=y \
+CONFIG_DEV_DAX_PMEM=m \
+"
+
+# add keys
+for key in $ADD_KEYS; do
+	echo "$key" >> .config
+done

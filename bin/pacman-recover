@@ -1,0 +1,23 @@
+#!/bin/bash -x
+
+recovery-pacman() {
+    sudo -E pacman "$@"  \
+    --log /dev/null   \
+    --noscriptlet     \
+    --dbonly          \
+    --force           \
+    --nodeps          \
+    --needed
+}
+
+# paclog --pkglist /var/log/pacman.log | pacrecover >files.list 2>pkglist.orig
+# { cat pkglist.orig; pacman -Slq; } | sort | uniq -d > pkglist
+# comm -23 <(pacman -Sgq base | sort) pkglist.orig >> pkglist
+
+# sudo pacman -Sy
+# recovery-pacman -U $(< files.list)
+# recovery-pacman -S $(< pkglist)
+# sudo pacman -D --asdeps $(pacman -Qq)
+# sudo pacman -D --asexplicit $(pacman -Qtq)
+# sudo pacman -Qk
+# sudo pacman -Su

@@ -1,0 +1,52 @@
+#!/bin/bash
+
+MAX_TIME=$1
+shift
+COMMAND=$1
+shift
+FILE=./touch-file-$$
+RUN=0
+
+start=$(date +%s)
+last_seconds=0
+
+# echo "$ run-and-touch $FILE $* &"
+run-and-touch $FILE $* &
+
+while [ ! -f $FILE ]; do 
+	end=$(date +%s)
+	seconds=$(($end-$start))
+	if [ $seconds -gt $last_seconds ]; then
+		echo " $seconds sec: $(pwd) $*"
+	fi
+	if [ $seconds -gt 2 ]; then
+		# echo "        sleep..."
+		sleep 1;
+	fi
+	last_seconds=$seconds
+	if [ $seconds -gt $MAX_TIME -a $RUN -eq 0 ]; then
+		# echo "Time is out! Running: $COMMAND"
+		$COMMAND
+		RUN=1
+	fi
+done
+
+end=$(date +%s)
+seconds=$(($end-$start))
+
+rm -f $FILE
+
+if [ $RUN -eq 1 ]; then
+	FILE="FINISHED"
+	echo "FINISHED: $COMMAND"   > $FILE
+	echo "FINISHED: $(pwd) $*" >> $FILE
+	echo "Finished (ran for $seconds seconds): $(pwd) $* - $seconds sec" >> $FILE
+	m $FILE
+	cat $FILE
+	rm $FILE
+fi
+
+# echo
+echo "Finished (ran for $seconds seconds): $(pwd) $* - $seconds sec"
+# echo
+

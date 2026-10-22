@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# 1 - subject
+# 2 - email
+# 3 - message
+
+echo "$3" | mail -s "$1" $2 || mail-fails-str "$1" "$2" "$3"

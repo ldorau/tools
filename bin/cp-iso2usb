@@ -1,0 +1,28 @@
+#!/bin/bash
+
+ISO=$1
+USB=$2
+
+if [ -z "$ISO" -o -z "$USB" ]; then
+	echo "Usage: $0 <file.iso> </dev/sdx(USB)>"
+	exit 0
+fi
+
+if [ ! -f $ISO ]; then
+	echo "The ISO file does not exits: $ISO"
+	exit 1
+fi
+
+if [ ! -b "$USB" ]; then
+	echo "The target device does not exist or it is not a block device: $USB"
+	exit 1
+fi
+
+echo "$ dd bs=4M if=$ISO of=$USB conv=fsync oflag=direct status=progress"
+echo -n "Are you sure you want to run the above command (y/N)? "
+read -n1 resp
+echo
+[ "$resp" != "y" ] && exit 0
+
+dd bs=4M if=$ISO of=$USB conv=fsync oflag=direct status=progress
+echo OK

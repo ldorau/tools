@@ -1,0 +1,7 @@
+#!/bin/bash
+
+FILE=$(mktemp)
+
+vim $FILE
+rm -f $FILE
+

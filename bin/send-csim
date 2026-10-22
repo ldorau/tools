@@ -1,0 +1,15 @@
+#!/bin/bash
+
+rm -rf ~/work/test/pfra-csim
+cp -r ~/work/pfra-csim ~/work/test
+
+cd ~/work/test/pfra-csim
+rm -rf .git*
+cd src
+make clobber
+
+cd ~/work/test
+tar -czf pfra-csim.tar.gz ./pfra-csim
+m pfra-csim.tar.gz
+rm -rf ./pfra-csim*
+cd

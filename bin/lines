@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ "$3" == "" ]; then
+	echo "Usage: $(basename $0) <file> <line-start> <line-end>"
+	echo "   or: sed -n <line-start>,<line-end>p <file>"
+	exit 1
+fi
+
+if [ ! -f $1 ]; then
+	echo "Error: file $1 does not exist"
+	exit 1
+fi
+
+# echo "$ sed -n ${2},${3}p $1"
+sed -n ${2},${3}p $1

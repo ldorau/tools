@@ -1,0 +1,28 @@
+#!/bin/bash
+
+ORIGIN=$(git-get-origin)
+
+DIR=$(git-get-current-repo-dir 2>/dev/null)
+[ "$DIR" == "" ] && exit 1
+
+FILE=$DIR/.git/default-branches
+if [ -f $FILE ]; then
+	cat $FILE | grep -v -e '#' | cut -d" " -f1
+	exit 0
+fi
+
+BRANCH=$(git branch -a | grep -e "remotes/$ORIGIN/HEAD" | awk '{ print $3 }' | cut -d'/' -f2)
+if [ $(echo $BRANCH | wc -w) -eq 1 ]; then
+	echo $BRANCH
+	exit 0
+fi
+
+DEFAULT_BRANCHES="main master"
+for branch in $DEFAULT_BRANCHES; do
+	if git log -1 $ORIGIN/$branch >/dev/null 2>&1; then
+		echo "$branch"
+		exit 0
+	fi
+done
+
+echo "unknown"

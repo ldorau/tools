@@ -1,0 +1,32 @@
+#!/bin/bash
+
+if [ "$1" == "" ]; then
+        echo "No input file given - exiting..."
+        exit
+fi
+
+FILE=$1
+
+ALL_LINES=/tmp/spell-check-temp-file-2-$$
+ALL_WORDS=/tmp/spell-check-temp-file-3-$$
+UNIQ_WORDS=/tmp/spell-check-temp-file-4-$$
+COUNT_WORDS=/tmp/spell-check-temp-file-5-$$
+
+echo "---------------------------------------"
+echo "Spelling errors regarding C/C++ syntax:"
+echo "---------------------------------------"
+
+aspell -a --mode=ccpp --dont-suggest -l en_US  < $FILE 2>/dev/null | grep " " | grep -v "International Ispell Version" > $ALL_LINES
+
+cat $ALL_LINES | cut -d" " -f2 > $ALL_WORDS
+cat $ALL_WORDS | sort | uniq > $UNIQ_WORDS
+
+rm -f $COUNT_WORDS
+for word in $(cat $UNIQ_WORDS) ; do 
+	COUNT=$(cat $ALL_LINES | grep " $word " | wc -l)
+	echo "$COUNT $word" >> $COUNT_WORDS
+done 
+cat $COUNT_WORDS | sort -g
+
+rm -f /tmp/spell-check-temp-file-*
+

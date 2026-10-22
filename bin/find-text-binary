@@ -1,0 +1,18 @@
+#!/bin/bash
+# find . -name "*" | xargs grep -e "$1" | cut -d: -f1 | uniq
+
+echo "Looking for the string \"$2\" in files \"$1\"..."
+#echo "(command: find . -name \"$1\" -print0 | xargs -0 grep -n -A0$3 -B0$4 -e \"$2\" 2>/dev/null | grep -v \"/.git/\" | grep -v \"Binary file \")"
+
+echo "-----"
+find . -name "$1" -print0 | xargs -0 grep -n -A0$3 -B0$4 -e "$2" 2>/dev/null | grep -v "/.git/"  
+echo "-----"
+echo "Strings \"$2\" in files \"$1\""
+
+############################################
+#echo "(command: find . -name \"$1\" -print0 | xargs -0 grep -n -A0$3 -B0$4 -e \"$2\" 2>/dev/null | grep -v \"/.git/\" | grep -v \"Binary file \")"
+#echo "---"
+#echo "Output of:"
+#echo "$ find . -name \"*\" -print0 | xargs -0 grep -e \"$1\" "
+#echo  Files containing \"$1\"
+

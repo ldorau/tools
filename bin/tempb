@@ -1,0 +1,13 @@
+#!/bin/bash
+
+git branch -d temp 2>/dev/null
+RV=$?
+set -e
+if [ $RV -ne 0 ]; then
+	BR=$(git-get-current-branch)
+	git checkout temp
+	git checkout -b temp-prev-$(date +%s)
+	git checkout $BR
+	git branch -D temp
+fi
+git checkout -b temp

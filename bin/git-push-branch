@@ -1,0 +1,25 @@
+#!/bin/bash
+
+ORIGIN=$(git-get-origin)
+
+if [ "$1" == "-f" ]; then
+	FORCE="-f"
+	shift
+else
+	FORCE=""
+fi
+
+if [ "$1" == "" ]; then
+        echo "ERROR: no branch name given"
+        exit 0;
+fi
+
+if [ "$2" == "" ]; then
+	REPO="$ORIGIN"
+else
+	REPO=$2
+fi
+
+echo ">>> git-push-secure $REPO $FORCE HEAD:$1"
+git-push-secure $REPO $FORCE HEAD:$1
+

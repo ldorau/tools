@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ "$1" == "" ]; then
+	echo "Error: time in minutes is missing"
+	exit 1
+fi
+
+sudo shutdown --poweroff +$1

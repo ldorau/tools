@@ -1,0 +1,11 @@
+#!/bin/bash
+
+DIRS=$(find ~/work/ -maxdepth 1 -type d | sort | xargs)
+
+for d in $DIRS; do
+	cd $d
+	[ ! -d .git ] && continue
+	echo
+	echo ">>> SYNCING DIR: $d"
+	sync-repos $*
+done

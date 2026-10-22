@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ "$1" == "" ]; then
+        echo "usage: $0 <string> [file-pattern]"
+        echo "Deletes lines with <string> in files [file-pattern]"
+        exit 0;
+fi
+
+[ "$2" == "" ] && FILES="*" || FILES="$2"
+
+echo "Deletes lines with $1 in files $FILES ..."
+
+rm -rf ../.temp-dir-git
+mv -f .git ../.temp-dir-git 2>/dev/null
+ 
+echo "find . -name '$FILES' -type f -print0 | xargs -0 sed -i '/$1/d'"
+find . -name "$FILES" -type f -print0 | xargs -0 sed -i "/$1/d"
+
+mv -f ../.temp-dir-git .git 2>/dev/null
+

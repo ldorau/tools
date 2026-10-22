@@ -1,0 +1,9 @@
+#!/bin/bash
+
+export NEX=$1
+
+cmake .. && \
+	make example-minussr-$NEX && \
+	clear && \
+	valgrind --leak-check=full --track-origins=yes ./tests/integration/example-minussr-${NEX}/example-minussr-${NEX} $2
+

@@ -1,0 +1,2 @@
+for arg in $(cat $1 | xargs) ; do $2 $arg ; done 
+

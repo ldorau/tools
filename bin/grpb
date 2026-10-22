@@ -1,0 +1,12 @@
+#!/bin/bash
+# like 'grp'
+
+if [ "$2" != "" ]; then
+	find . -type f -name ".git" -prune -o -name "$2" -print0 | \
+		xargs -0 \
+		grep --color=auto -e "$1" 2>/dev/null | \
+		grep -v -e "\.git\/" | \
+		grep --color=auto -e "$1" 2>/dev/null
+else
+	grep --color=auto -nrH -e "$1" 2>/dev/null
+fi

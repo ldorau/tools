@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for file in $(ls ./*.txt); do
+	# remove all non-printable characters
+	sed -i 's/[^[:print:]\r\t\n]//g' $file || true
+done

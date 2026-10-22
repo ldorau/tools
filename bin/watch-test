@@ -1,0 +1,10 @@
+#!/bin/bash
+
+PID=$1
+
+if [ "$PID" == "" ]; then
+	PID=$(ls -1 -t /tmp/check-output-*.txt | head -n1 | cut -d"-" -f3 | cut -d"." -f1)
+fi
+
+tailf /tmp/check-output-$PID.txt
+

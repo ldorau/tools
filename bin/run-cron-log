@@ -1,0 +1,20 @@
+#!/bin/bash
+
+DIR=~/cron
+mkdir -p $DIR
+
+LOG=$DIR/cron.log
+OUTPUT=$DIR/cron-output.log
+
+COMMAND="$*"
+
+echo "$(date): Starting:    $COMMAND" >> $LOG
+echo ">>>>> $(date): Starting:    $COMMAND" >> $OUTPUT
+
+eval $COMMAND >> $OUTPUT 2>&1
+RV=$?
+
+echo "$(date): Done (RV=$RV): $COMMAND" >> $LOG
+echo ">>>>> $(date): Done (RV=$RV): $COMMAND" >> $OUTPUT
+echo >> $OUTPUT
+

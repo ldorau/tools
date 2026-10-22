@@ -1,0 +1,34 @@
+#!/bin/bash
+# find . -name "*" | xargs grep -e "$1" | cut -d: -f1 | uniq
+
+if [ "$1" == "-v" ]; then
+	VERBOSE=1
+	shift
+fi
+
+if [ "$1" == "" ]; then
+	echo "Usage: $0 [-v] string-to-look-for [file-mask]"
+	echo "Options:"
+	echo "   -v   be more verbose"
+	exit 0
+fi
+
+if [ "$2" != "" ]; then
+	MASK=$2
+else
+	MASK="*"
+fi
+
+if [ "$VERBOSE" == "1" ]; then
+	echo "Looking for the string \"$1\" in files \"$MASK\"..."
+	echo "-----"
+fi
+
+find . -name ".git" -prune -o -name "$MASK" -print0 | xargs -0 grep -nH -e "$1" 2>/dev/null | grep --color=auto -v -e "\.git\/" -e "Binary file "
+
+if [ "$VERBOSE" == "1" ]; then
+	echo "-----"
+	echo "Strings \"$1\" in files \"$MASK\""
+fi
+
+

@@ -1,0 +1,3 @@
+#!/bin/bash
+
+cat /proc/$1/smaps | grep -A22 -e "$2" | grep -e "$2" -e VmFlags -e "Size:"

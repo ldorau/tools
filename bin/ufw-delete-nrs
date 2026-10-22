@@ -1,0 +1,12 @@
+#!/bin/bash
+
+PREV=9999
+for nr in $*; do
+	if [ $nr -lt $PREV ]; then
+		echo y | sudo ufw delete $nr
+		PREV=$nr
+	else
+		echo "ERROR: number $nr is NOT less than the previous one $PREV - aborting ..."
+		exit 1
+	fi
+done

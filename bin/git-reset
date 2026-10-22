@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "$ git reset --hard $(git-get-current-commit) --"
+git reset --hard $(git-get-current-commit) --

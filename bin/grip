@@ -1,0 +1,9 @@
+#!/bin/bash
+# git rebase -i $PREVIOUS_BRANCH
+
+git checkout -
+PREVIOUS_BRANCH=$(git-get-current-branch)
+git checkout -
+
+echo "$ git rebase -i $PREVIOUS_BRANCH"
+git rebase -i $PREVIOUS_BRANCH

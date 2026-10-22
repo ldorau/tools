@@ -1,0 +1,4 @@
+#!/bin/bash
+stg commit -a
+git branch -D `git branch | grep stgit`
+

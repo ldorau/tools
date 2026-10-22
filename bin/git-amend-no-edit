@@ -1,0 +1,4 @@
+#!/bin/bash
+
+[ $(git diff | wc -l) -gt 0 ] && git commit -a --amend --reset-author --no-edit || echo No changes
+

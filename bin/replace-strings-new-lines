@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if [ "$1" == "" ]; then
+        echo "usage: $0 <string1> <string2> [file-pattern]"
+        echo "Replaces <string1> with <string2> in files [file-pattern]"
+        exit 0;
+fi
+
+GIT_MOVED=0
+if [ -d .git ]; then
+	TEMP_GIT="../.temp-dir-git"
+	rm -rf $TEMP_GIT
+	mv .git $TEMP_GIT
+	GIT_MOVED=1
+fi
+
+[ "$3" == "" ] && FILES="*" || FILES="$3"
+
+echo "Replacing $1 with $2 in files $FILES ..."
+echo "find . -name '$FILES' -type f -print0 | xargs -0 sed -i 'N;s/$1/$2/g'"
+find . -name "$FILES" -type f -print0 | xargs -0 sed -i "N;s/$1/$2/g"
+
+if [ $GIT_MOVED -eq 1 ]; then
+	mv -f $TEMP_GIT .git
+fi
+

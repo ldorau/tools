@@ -1,0 +1,6 @@
+#!/bin/bash
+
+STRING=$1
+FILE=$2
+
+awk "/$STRING/{y=1} y" $FILE

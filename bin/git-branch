@@ -1,0 +1,4 @@
+#!/bin/bash
+
+git branch --sort=authordate --format="%(authordate:short) %(refname:short)"
+

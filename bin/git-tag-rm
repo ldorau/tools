@@ -1,0 +1,17 @@
+#!/bin/bash
+
+ORIGIN=$(git-get-origin)
+
+if [ "$1" == "" ]; then
+        echo "ERROR: no tag name given"
+        exit 0;
+else
+        git tag -d $1
+        if [ "$2" == "" ]; then
+                git-push-secure $ORIGIN --delete $1
+#               git-push-secure $ORIGIN :refs/tags/$1
+        else
+                git-push-secure $2 --delete $1
+#               git-push-secure $2 :refs/tags/$1
+        fi
+fi

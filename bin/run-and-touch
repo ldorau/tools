@@ -1,0 +1,12 @@
+#!/bin/bash
+
+FILE=$1
+shift
+COMMAND=$*
+
+# echo "Running command: $COMMAND"
+# /bin/bash -c "$COMMAND"
+$*
+
+# echo "Touching file: $FILE"
+touch $FILE

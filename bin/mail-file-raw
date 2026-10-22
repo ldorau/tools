@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# 1 - subject
+# 2 - email
+# 3 - file
+
+FILE=/tmp/tmp-mail-file-raw-$$
+
+cp $3 $FILE
+cat $FILE | mail -s "$1" $2 || mail-fails-file "$1" "$2" "$3"
+
+rm-sleep-bg -f $FILE &

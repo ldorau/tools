@@ -1,0 +1,93 @@
+#!/bin/bash
+
+[ "$RAM_DISK_DIR" == "" ] && RAM_DISK_DIR=/dev/shm
+NVML_DIR=nvml-test
+LOCK_FILE=/tmp/check-review-lock.txt
+DIR_TO_TEST=`pwd`
+
+if [ "$1" == "-fu" ]; then
+	rm -f $LOCK_FILE
+	shift
+fi
+if [ -f $LOCK_FILE ]; then
+        echo "Test already in progress ($LOCK_FILE):"
+        ps aux | grep -e make -e review -e check | grep -v grep
+        echo "Exiting..."
+        exit
+fi
+
+BRANCH=0
+if [ "$1" == "-b" ]; then
+	BRANCH=1
+	shift
+	BRANCH_NAME=$1
+	echo Will merge the BRANCH: $BRANCH_NAME ...
+	shift
+fi
+
+PATCH=0
+if [ "$1" == "-p" ]; then
+	PATCH=1
+	shift
+	PATCH_NUMBER=$1
+	echo Will apply the PATCH: $PATCH_NUMBER ...
+	shift
+fi
+
+if [ "$*" == "" ]; then
+	echo "Error: no option given."
+	echo "Usage: $0 [ -fu | -b branch | -p patch ] <check-review options>"
+	echo "	-fu		force unlock"
+	echo "	-b branch	merge <branch>"
+	echo "	-p patch	apply <patch>"
+	echo
+	echo "Options of check-review:"
+	check-review
+	exit 0
+fi
+
+echo "Removing $RAM_DISK_DIR/$NVML_DIR..."
+rm -rf $RAM_DISK_DIR/$NVML_DIR
+cd $RAM_DISK_DIR
+
+git clone $DIR_TO_TEST $NVML_DIR
+cd $NVML_DIR
+
+echo
+if [ $BRANCH -eq 1 ]; then
+	echo Merging the branch: $BRANCH_NAME ...
+	review-branch $BRANCH_NAME
+fi
+if [ $PATCH -eq 1 ]; then
+	echo Applying the patch: $PATCH_NUMBER ...
+	[ "$PATCH_NUMBER" == "-" ] && PATCH_NUMBER=""
+	review-patch $PATCH_NUMBER
+fi
+
+cp -f ~/testconfig.sh-local src/test/testconfig.sh
+
+echo
+echo "***************************************************"
+echo "Running:"
+echo "$ check-review $*"
+echo "***************************************************"
+echo
+
+start=$(date +%s)
+
+check-review $*
+RV=$?
+
+end=$(date +%s)
+seconds=$(($end-$start))
+minutes=$((($end-$start)/60))
+left_sec=$(($seconds-60*minutes))
+
+echo
+echo "ran for $seconds seconds ($minutes min $left_sec sec)"
+echo
+
+if [ $RV -ne 0 ]; then
+	echo "ERROR CODE = $RV"
+	exit $RV
+fi

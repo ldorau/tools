@@ -1,0 +1,16 @@
+#!/bin/bash
+
+ORIGIN=$(git-get-origin)
+
+if [ "$1" == "" ]; then
+        echo "ERROR: no tag name given"
+        exit 0;
+else
+	git tag $1
+	if [ "$2" == "" ]; then
+		git-push-secure $ORIGIN tag $1
+	else
+		git-push-secure $2 tag $1
+	fi
+fi
+

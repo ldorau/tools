@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ "$1" == "" ]; then
+	echo "usage: $0 <commit-to-review>"
+	exit 0
+fi
+
+main
+git pull
+git branch -D review
+git branch review
+git co review
+git reset --hard $1

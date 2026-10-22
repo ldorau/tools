@@ -1,0 +1,29 @@
+#!/bin/bash
+
+ARG1=$1
+
+case $ARG1 in 
+	on)
+		export PMEMLOG_LOG_LEVEL=10
+		export PMEMBLK_LOG_LEVEL=10
+		export PMEMOBJ_LOG_LEVEL=10
+		export PMEM_LOG_LEVEL=10
+		export VMEM_LOG_LEVEL=10
+		echo "Log levels set to 10 (ON):"
+		env | grep LOG_LEVEL
+		exit 0
+		;;
+	off)
+		export PMEMLOG_LOG_LEVEL=0
+		export PMEMBLK_LOG_LEVEL=0
+		export PMEMOBJ_LOG_LEVEL=0
+		export PMEM_LOG_LEVEL=0
+		export VMEM_LOG_LEVEL=0
+		echo "Log levels set to 0 (OFF):"
+		env | grep LOG_LEVEL
+		exit 0
+		;;
+esac
+
+echo "Usage: $0 <on|off>"
+exit 1

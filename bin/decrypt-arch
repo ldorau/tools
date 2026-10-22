@@ -1,0 +1,4 @@
+sudo mount.ecryptfs /mnt/old-files/work/ARCH /mnt/old-files/work/ARCH -o key=passphrase,ecryptfs_cipher=aes,ecryptfs_key_bytes=32,ecryptfs_passthrough=no,ecryptfs_enable_filename_crypto=yes,ecryptfs_fnek_sig=667f86dd0ed90e6f
+echo "Decrypted repo mounted on /mnt/old-files/work/ARCH/"
+echo "Enjoy!"
+

@@ -1,0 +1,45 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+	echo "Usage: $0 <addr> [-a|<hint-to-be-grepped>]"
+	echo "   -a - check all processes (not only those owned by the current user)"
+	exit 1
+fi
+
+ADDR=$1
+MY_ID=$(id -u)
+
+HINT=""
+case "$2" in
+"-a")
+	;;
+*)
+	HINT="$2"
+	;;
+esac
+
+if [ "$HINT" == "" ]; then
+	echo "Checking all processes of the '$(whoami)' user (with ID=$MY_ID):"
+	PIDS=$(ls -1 -d /proc/[0-9]* | cut -d'/' -f3)
+else
+	echo "Checking all processes containing the '$HINT' string in the command line:"
+	PIDS=$(ps aux | grep -e "$HINT" | awk '{print $2}')
+fi
+
+for PID in $PIDS; do
+	[ ! -f /proc/$PID/smaps ] && continue
+	if [ "$2" != "-a" ]; then
+		ID=$(stat -c %u /proc/$PID/smaps)
+		[ "$ID" != "$MY_ID" ] && continue
+	fi
+	echo "Checking PID $PID ..."
+	RESULT=$(find-address-pid $PID $ADDR -v)
+	if [ "$RESULT" != "" ]; then
+		echo "Found process (PID $PID) owning the $ADDR address:"
+		ps aux | grep -e "$PID" | grep -v -e "-e $PID" -e "$(basename $0)"
+		echo "$RESULT"
+		# exit 0
+	fi
+done
+
+echo "No process found."

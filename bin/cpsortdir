@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Usage: <first-dir-to-copy> <destination-dir>
+
+FIRST=$1
+DST=$2
+
+SKIP=1
+
+ls -1 . | sort | \
+while IFS='' read -r line || [[ -n "$line" ]]; do
+	DIR="$line"
+	[ "$DIR" == "$FIRST" ] && SKIP=0
+	[ $SKIP -eq 1 ] && continue
+	[ ! -d "$DIR" ] && continue
+	echo ">>>>> $DIR"
+	# echo "cpsort $DIR $DST"
+	cpsort "$DIR" $DST
+done

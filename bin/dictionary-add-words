@@ -1,0 +1,31 @@
+#!/bin/bash
+
+TEMP=/tmp/$$-dictionary-add-words
+
+if [ "$1" == "" ]; then
+	echo "Usage: $0 <list-of-words-to-be-added>"
+	exit 0
+fi
+
+DIC_PATH=/mnt/files/work/nvml_tools/spell-checker
+DICTIONARY=$DIC_PATH/spell-checker-dictionary
+
+if [ ! -f $DICTIONARY ]; then
+	echo "Error: cannot find the dictionary file: $DICTIONARY. Exiting ..."
+	exit 1
+fi
+echo "Dictionary: $DICTIONARY"
+
+echo "Following words were added:"
+for word in $*; do
+	echo "=$word="
+	echo "=$word=" >> $DICTIONARY
+done
+
+# sort $DICTIONARY
+
+rm -f $TEMP
+cat $DICTIONARY | sort | uniq > $TEMP
+mv $TEMP $DICTIONARY
+rm -f $TEMP
+

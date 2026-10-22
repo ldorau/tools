@@ -1,0 +1,42 @@
+#!/bin/bash
+
+
+echo "========== LAPTOP / SYSTEM =========="
+hostnamectl
+
+echo
+echo "========== CPU =========="
+lscpu | grep -E 'Model name|Architecture|CPU\(s\)|Thread|Core|Socket|MHz|CPU max MHz'
+
+echo
+echo "========== RAM =========="
+free -h
+
+echo
+echo "========== DISKS =========="
+lsblk -o NAME,SIZE,TYPE,ROTA,FSTYPE,MOUNTPOINT,MODEL
+
+echo
+echo "========== GRAPHICS =========="
+lspci | grep -Ei 'VGA|3D|Display'
+
+echo
+echo "========== GRAPHICS DETAILS =========="
+if command -v lshw >/dev/null 2>&1; then
+    sudo lshw -C display 2>/dev/null
+else
+    echo "lshw not installed; basic graphics info shown above"
+fi
+
+echo
+echo "========== OS VERSION =========="
+cat /etc/os-release | grep -E 'PRETTY_NAME|VERSION_ID'
+
+echo
+echo "========== 32/64-BIT =========="
+getconf LONG_BIT
+
+echo
+echo "========== SWAP =========="
+swapon --show
+

@@ -1,0 +1,22 @@
+#!/bin/bash
+# rebuild AUR nvidia drivers
+
+set -ex
+
+ORIGIN=$(git-get-origin)
+
+function rebuild(){
+	rm -rf *
+	git reset --hard $ORIGIN/$(git-get-default-branch)
+	git pull
+	ls -al
+	makepkg -si
+}
+
+rm -rf /tmp/makepkg/nvidia-340xx*
+
+cd ~/aur/nvidia-340xx
+rebuild
+
+cd ~/aur/nvidia-340xx-utils
+rebuild

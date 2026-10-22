@@ -1,0 +1,8 @@
+#!/bin/bash
+if [ "$1" == "" ]; then
+        echo "ERROR: no commit given"
+        exit 0;
+else
+	git reset --hard $1
+fi
+

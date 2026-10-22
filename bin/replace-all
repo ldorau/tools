@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ "$2" == "" ]; then
+        echo "usage: $0 <string1> <string2> [file-pattern]"
+        echo "Replaces <string1> with <string2> in files [file-pattern]"
+        exit 0;
+fi
+
+replace-strings $*
+replace-files $*

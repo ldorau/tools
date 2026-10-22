@@ -1,0 +1,5 @@
+#!/bin/bash
+# git rebase --abort
+
+echo "$ git rebase --abort"
+git rebase --abort

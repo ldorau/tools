@@ -1,0 +1,9 @@
+#!/bin/bash
+# grep all files recursively except .git/
+
+MASK=$2
+[ "$MASK" == "" ] && MASK="*"
+
+find . -path './.git/*' -prune -o -path './build/*' -prune -o -name "$MASK" -print0 | \
+	xargs -0 \
+	grep -nI --color=auto -e "$1" 2>/dev/null

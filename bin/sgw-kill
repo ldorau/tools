@@ -1,0 +1,15 @@
+#!/bin/bash
+
+function is_process() {
+	ps aux | grep -e "$1" | grep -v -e grep | grep -e "$1"
+}
+
+rm -f /tmp/gw-wait-*
+
+is_process "gw " && killall gw
+is_process "gw " && sleep 1
+is_process "gw " && killall -9 gw
+
+is_process "sgw " && killall sgw
+is_process "sgw " && sleep 1
+is_process "sgw " && killall -9 sgw

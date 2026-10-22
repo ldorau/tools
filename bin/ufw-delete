@@ -1,0 +1,9 @@
+#!/bin/bash
+
+DIR=$(dirname $0)
+
+if [[ "$1" == *.* ]]; then
+	$DIR/ufw-delete-ips $*
+else
+	$DIR/ufw-delete-nrs $*
+fi

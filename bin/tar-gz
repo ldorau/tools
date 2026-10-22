@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ "$2" == "" ]; then
+	echo "Usage: $0 <dir-to-tar-gz> <name.tar.gz>"
+	exit 0
+fi
+
+echo "tar -czf $2.tar.gz $1 ..."
+tar -czf $2.tar.gz $1
+

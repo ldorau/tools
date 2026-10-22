@@ -1,0 +1,10 @@
+#!/bin/bash
+
+export NEX=$1
+
+cmake .. && \
+	make example-minussr-$NEX && \
+	clear && \
+	./tests/integration/example-minussr-${NEX}/example-minussr-${NEX}
+
+echo "EXIT STATUS = $?"

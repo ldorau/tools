@@ -1,0 +1,21 @@
+#!/bin/bash
+
+if [ "$1" = "" ]; then
+	echo "Compress files from current directory to a new initramfs file."
+	echo "Usage: initramfs-compress  <INITRAMFS_FILE>"
+	exit 0
+fi
+if [ -e $1 ]; then
+	echo "Error: file $1 already exist! Exiting."
+	exit 1
+fi
+
+INITRAMFS_FILE=$1
+
+echo "Creating new $INITRAMFS_FILE file... Please wait..."
+find . | cpio --quiet -H newc -o | gzip -9 -n > $INITRAMFS_FILE
+
+echo "New $INITRAMFS_FILE file is created."
+echo "Done."
+
+

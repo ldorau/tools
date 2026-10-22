@@ -1,0 +1,101 @@
+#!/bin/bash
+#
+# Usage: CR-update [-f]
+#   -f  force re-installing the latest version even if it is already installed
+
+FORCE=false
+case "$1" in
+	"") ;;
+	-f) FORCE=true ;;
+	*) echo "Usage: $(basename "$0") [-f]" >&2; exit 1 ;;
+esac
+
+CR_DIR=~/work/compute-runtime
+CR_URL="https://github.com/intel/compute-runtime.git"
+
+cd "$CR_DIR" || exit 1
+# Fetch the tags explicitly from the upstream repository: a plain "git fetch"
+# uses the remote of the current branch, which may be a stale fork.
+if ! git fetch --tags --force "$CR_URL" 2>/dev/null; then
+	echo "ERROR: cannot fetch tags from $CR_URL" >&2
+	exit 1
+fi
+# Release tags only (YY.WW.BUILD.PATCH), sorted by version.
+LATEST=$(git tag | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
+if [ -z "$LATEST" ]; then
+	echo "ERROR: no compute-runtime release tag found" >&2
+	exit 1
+fi
+
+mkdir -p ./build
+CURRENT_FILE="$CR_DIR/build/.version"
+CURRENT=$(cat "$CURRENT_FILE" 2>/dev/null)
+[ "$CURRENT" = "" ] && CURRENT="prev"
+
+if [ "$LATEST" = "$CURRENT" ]; then
+	if [ "$FORCE" = false ]; then
+		echo "L0 CR driver is up-to-date ($CURRENT). No update needed (use -f to force re-installing it)."
+		exit 0
+	fi
+	echo "L0 CR driver is up-to-date ($CURRENT), but forcing re-installing it (-f) ..."
+fi
+
+ARCHIVE=$CR_DIR/build-$CURRENT
+[ -e "$ARCHIVE" ] && ARCHIVE="${ARCHIVE}-$(date +%Y%m%d-%H%M%S)"
+echo "Archive the current L0 CR $CURRENT build to $ARCHIVE ..."
+mv "$CR_DIR/build" "$ARCHIVE" || exit 1
+
+# Move the failed new build aside (kept for inspection) and restore the
+# previous one.
+restore_previous_build() {
+	local FAILED
+	FAILED="$CR_DIR/build-$LATEST-FAILED-$(date +%Y%m%d-%H%M%S)"
+	echo
+	echo "ERROR: build of $LATEST FAILED, restoring the previous $CURRENT build"
+	if [ -e "$CR_DIR/build" ]; then
+		echo "The failed build is kept in: $FAILED"
+		mv "$CR_DIR/build" "$FAILED"
+	fi
+	mv "$ARCHIVE" "$CR_DIR/build"
+}
+
+# Also restore the previous build when interrupted (Ctrl-C, closed terminal),
+# otherwise an incomplete build would be left in place.
+on_signal() {
+	trap - INT TERM HUP
+	restore_previous_build
+	exit 130
+}
+trap on_signal INT TERM HUP
+
+echo "Updating L0 CR driver to $LATEST ..."
+mkdir -p ./build
+git reset --hard "$LATEST"
+
+echo "Building L0 CR Debug ..."
+echo "$ ~/work/mytools/bin/build_cr.sh $LATEST $CR_DIR/build Debug"
+~/work/mytools/bin/build_cr.sh "$LATEST" "$CR_DIR/build" "Debug"
+
+BUILD_STATUS=$?
+trap - INT TERM HUP
+if [ $BUILD_STATUS -ne 0 ]; then
+	restore_previous_build
+else
+	# Written only after a successful build, so that an interrupted or failed
+	# build is never reported as up-to-date.
+	echo "$LATEST" > "$CURRENT_FILE"
+fi
+
+# lit enables the "ocloc" feature of SYCL E2E tests only if an executable
+# named exactly "ocloc" is found in PATH, but compute-runtime installs a
+# versioned one (e.g. ocloc-26.35.1), so keep ~/bin/ocloc pointing at it.
+OCLOC=$(ls "$CR_DIR"/build/bin/ocloc-* 2>/dev/null | sort -V | tail -n1)
+if [ -n "$OCLOC" ]; then
+	mkdir -p ~/bin
+	ln -sf "$OCLOC" ~/bin/ocloc
+	echo "Updated the ~/bin/ocloc link -> $OCLOC"
+else
+	echo "WARNING: no ocloc-* found in $CR_DIR/build/bin, ~/bin/ocloc not updated"
+fi
+
+exit $BUILD_STATUS

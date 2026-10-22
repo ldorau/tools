@@ -1,0 +1,4 @@
+#!/bin/bash
+
+sudo journalctl -b -0 -p 0..4
+

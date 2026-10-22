@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+if [ "`mount | grep CRYPT`" == "" ]; then
+        echo "CRYPT is NOT mounted !"
+        exit 0;
+else
+	sudo umount /mnt/old-files/work/CRYPT
+fi

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+run-app weechat
+run-app workrave
+
+

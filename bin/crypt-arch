@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+if [ "`mount | grep ARCH`" == "" ]; then
+        echo "ARCH is NOT mounted !"
+        exit 0;
+else
+	sudo umount /mnt/old-files/work/ARCH
+fi

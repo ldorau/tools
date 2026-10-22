@@ -1,0 +1,106 @@
+#!/bin/bash
+
+ORIGIN=$(git-get-origin)
+
+function do_on_exit()
+{
+	echo
+	echo "The last two commits:"
+	git log -2
+	echo
+#	STATUS=`git status --porcelain`
+#	if [ "$STATUS" != "" ]; then
+#		git-clean-all
+#		echo
+#	fi
+	echo
+	echo "Applied commit '$COMMIT' of '$NAME' (review #$NR) to branch: $BRANCH"
+	echo
+}
+
+STATUS=`git status --porcelain | grep -v '??'`
+if [ "$STATUS" != "" ]; then
+	echo "Working directory is dirty. Exiting..."
+	exit 1
+fi
+
+if [ "$1" == "" ]; then
+	PATCH=`ls -1 -t ~/Downloads/rb* | head -n1`
+	if [ "$PATCH" == "" ]; then
+		echo "No patch to test. Exiting..."
+		exit
+	fi
+	if [ ! -f $PATCH ]; then
+		echo "Patch $PATCH does not exist. Exiting..."
+		exit
+	fi
+
+	NR=`echo $PATCH | cut -d"b" -f2 | cut -d"." -f1`
+	echo "No number given. Testing the newest one: $PATCH (#$NR)"
+else
+	PATCH=~/Downloads/rb$1.patch
+	NR=$1
+fi
+
+if [ ! -f $PATCH ]; then
+	echo "File $PATCH does not exist. Exiting..."
+	exit
+fi
+
+COMMIT=`head -n3 $PATCH  | grep Subject | cut -d" " -f3`
+NAME=`head -n3 $PATCH  | grep From | cut -d" " -f3`
+BRANCH=review-$NR-$NAME-$COMMIT
+
+if ! git status | grep "nothing to commit, working tree clean" >/dev/null 2>&1; then
+	git commit -a || (echo "ERROR: git commit -a FAILED" && exit 1)
+fi
+
+echo
+DEFAULT_BRANCH=$(git-get-default-branch)
+git checkout $DEFAULT_BRANCH
+git branch -D $BRANCH 2> /dev/null
+git checkout -b $BRANCH
+
+if [ "$2" == "" ]; then
+	git reset --hard $ORIGIN/$DEFAULT_BRANCH
+else
+	BRANCH_COMMIT=$2
+	git reset --hard $BRANCH_COMMIT
+fi
+
+# pmem-test-am ON ;##########################################33 
+
+echo
+echo "Applying the patch $PATCH:"
+git am < $PATCH
+if [ $? -ne 0 ]; then
+	COMMITS="/tmp/review-patch-commits-$$"
+	git log | grep -B2 "Author:" | grep commit | cut -d" " -f2 > $COMMITS
+
+	for commit in `cat $COMMITS | xargs`; do
+		git am --abort
+		echo "ERROR: git am FAILED"
+		echo
+		echo "Trying from the commit: $commit"
+		git reset --hard $commit 
+		git am < $PATCH
+		if [ $? -eq 0 ]; then
+			do_on_exit
+			exit
+		fi
+	done
+
+	git am --abort
+	echo "ERROR: git am FAILED"
+	echo
+	git checkout $DEFAULT_BRANCH
+	git branch -D $BRANCH 2> /dev/null
+
+	echo "Try to apply at different commit:"
+	echo "$0 <number> <commit-hash>"
+	echo
+	exit
+fi
+
+do_on_exit
+

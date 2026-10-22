@@ -1,0 +1,5 @@
+#!/bin/bash
+# git rebase --skip
+
+echo "$ git rebase --skip"
+git rebase --skip

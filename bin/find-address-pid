@@ -1,0 +1,27 @@
+#!/bin/bash
+
+if [ -z "$2" ]; then
+	echo "Usage: $0 <pid> <addr> [-v]"
+	echo "   -v - print verbos output from smaps"
+	exit 1
+fi
+
+PID=$1
+ADDR=$2
+
+RANGES=$(cat /proc/${PID}/smaps | grep -B1 -e 'Size:' | grep -v -e 'Size:' -e '--' | cut -d' ' -f1)
+
+for RANGE in $RANGES; do
+	A1=$(echo $RANGE | cut -d- -f1)
+	ADDR1=0x${A1}
+	ADDR2=0x$(echo $RANGE | cut -d- -f2)
+	# echo "$ADDR1 - $ADDR2 size = $(($ADDR2 - $ADDR1))"
+	# echo " $(($ADDR - $ADDR1)) -ge 0 -a $(($ADDR2 - $ADDR)) -gt 0 "
+	if [ $(($ADDR - $ADDR1)) -ge 0 -a $(($ADDR2 - $ADDR)) -gt 0 ]; then
+		if [ "$3" == "-v" ]; then
+			cat /proc/${PID}/smaps | grep -e "$A1-"
+		else
+			echo $A1
+		fi
+	fi
+done

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+DIR=$(git-get-current-repo-dir 2>/dev/null)
+[ "$DIR" == "" ] && exit 1
+
+FILE=$DIR/.git/upstream
+if [ -f $FILE ]; then
+	cat $FILE | grep -v -e '#'
+	exit 0
+fi
+
+if [ "$GIT_UPSTREAM" != "" ]; then
+	echo $GIT_UPSTREAM
+	exit 0
+fi
+
+git remote -v | grep -q -e "upstream" && echo "upstream"

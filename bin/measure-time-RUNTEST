@@ -1,0 +1,12 @@
+#!/bin/bash
+
+start=$(date +%s)
+
+echo "Running: $*..."
+$*
+
+end=$(date +%s)
+seconds=$(($end-$start))
+
+echo "$1 ; $2 ; $3 ; $4 ; $5 ; $seconds" >> /tmp/RUNTEST-second
+

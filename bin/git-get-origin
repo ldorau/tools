@@ -1,0 +1,17 @@
+#!/bin/bash
+
+DIR=$(git-get-current-repo-dir 2>/dev/null)
+[ "$DIR" == "" ] && exit 1
+
+FILE=$DIR/.git/origin
+if [ -f $FILE ]; then
+	cat $FILE | grep -v -e '#'
+	exit 0
+fi
+
+if [ "$GIT_ORIGIN" != "" ]; then
+	echo $GIT_ORIGIN
+	exit 0
+fi
+
+echo "origin"

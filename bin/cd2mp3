@@ -1,0 +1,80 @@
+#!/bin/bash
+
+echo "Usage: $0 [quality] [starting-step] [cdparanoia-options]"
+echo "   quality - 1 - medium, 2 - standard (default), 3 - extreme"
+
+N=$1
+[ "$N" == "" ] && N=2
+case $N in
+	1)
+		QUALITY="medium"
+		;;
+	2)
+		QUALITY="standard"
+		;;
+	3)
+		QUALITY="extreme"
+		;;
+	*)
+		echo "Wrong quality ($N) - it has to be: 1, 2 or 3"
+		exit 1
+		;;
+esac
+
+START_FROM=$2
+[ "$START_FROM" == "" ] && START_FROM=1
+
+echo "Quality: $QUALITY ($N)"
+echo "Starting from: $START_FROM"
+echo
+
+#
+# rip from CD
+#
+if [ $START_FROM -eq 1 ]; then
+	# packages: cdrtools cdparanoia abcde
+	# rip waves
+	cdparanoia -B $3
+	# create *.inf files
+	# normal call: cdda2wav -vall cddb=0 speed=4 -paranoia paraopts=proof -B
+	timeout -k 45s 45s cdda2wav -vall cddb=0 speed=4 -paranoia paraopts=proof -B
+	rm -f ./audio_*.wav ./audio_*.inf ./audio.cdindex
+	# abcde -k -o mp3:"-v","--preset $QUALITY"
+fi
+
+#
+# convert *.wav to *.mp3
+#
+if [ $START_FROM -le 2 ]; then
+	WAVES=$(ls -1 *.wav | xargs)
+	[ "$WAVES" == "" ] && exit 1
+	for wav in $WAVES; do
+		NAME=$(echo $wav | cut -d. -f1)
+		lame -v --preset $QUALITY $wav $NAME.mp3 || ffmpeg -i $wav $NAME.mp3
+		[ $? -eq 0 -a -f ./$NAME.mp3 ] && rm -f ./$wav
+	done
+fi
+
+#
+# rename files
+#
+FILE="audio.cddb"
+if [ $START_FROM -le 3 -a -f $FILE ]; then
+	DIR=$(cat $FILE | grep --text -e "DTITLE=" | cut -d= -f2 | sed "s/ \/ /-/g" | sed "s/ /_/g" | sed "s/['().,]//g")
+	DNR=$(basename $(pwd))
+	[ $(echo $DNR | wc -c) -eq 4 ] && DIR=$DNR-$DIR
+	mkdir -p -v $DIR
+
+	MP3S=$(ls -1 *.mp3 | xargs)
+	[ "$MP3S" == "" ] && exit 1
+	for mp3 in $MP3S; do
+		NAME=$(echo $mp3 | cut -d. -f1)
+		NR=$(echo $NAME | sed "s/audio//g" | sed "s/track//g" | sed "s/_//g")
+		N=$(echo $NR | sed "s/$[0]*//g")
+		TNR=$(($N - 1))
+		TITLE=$(cat $FILE | grep --text -e "TTITLE${TNR}=" | cut -d= -f2 | sed "s/ \/ /-/g" | sed "s/ /_/g" | sed "s/['().,]//g")
+		NEW=$DIR/${NR}_${TITLE}.mp3
+		mv -v $mp3 $NEW
+	done
+fi
+

@@ -1,0 +1,15 @@
+#!/bin/bash
+# edit with vim all files: grep all files recursively except .git/
+
+STOP_FILE=/tmp/temp-stop-vgrp
+rm -f $STOP_FILE
+
+grp "$@" | cut -d: -f1-2 | \
+while IFS='' read -r line || [[ -n "$line" ]]; do
+	v "$line" || echo "Command failed: v \"$line\""
+	if [ -f $STOP_FILE ]; then
+		echo "Stopped!"
+		rm -f $STOP_FILE
+		exit 0
+	fi
+done

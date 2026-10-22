@@ -1,0 +1,10 @@
+#!/bin/bash
+
+sudo paccache -r
+sudo docker image prune
+sudo docker container prune
+sudo journalctl --vacuum-size=1G
+
+echo
+echo "Current disk usage of Docker images:"
+sudo du -sh /var/lib/docker/overlay2

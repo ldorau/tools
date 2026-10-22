@@ -1,0 +1,30 @@
+#!/bin/bash
+
+if [ "$1" = "" ]; then
+	echo "Uncompress given initramfs file."
+	echo "Usage: initramfs-uncompress  <INITRAMFS_FILE>"
+	exit 0
+fi
+if [ ! -e $1 ]; then
+	echo "File $1 does not exist!"
+	exit 1
+fi
+
+INITRAMFS_FILE=$1
+WD=`pwd`
+TEMPDIR=$WD/temp-initramfs-$$
+
+echo "Creating temporary directory: $TEMPDIR"
+mkdir -p $TEMPDIR
+cd $TEMPDIR
+
+echo "Uncompressing $INITRAMFS_FILE file to temp dir $TEMPDIR..." 
+cp $INITRAMFS_FILE initramfs.gz
+gzip -d initramfs.gz
+cpio -i < initramfs
+rm -f initramfs
+
+echo "File $INITRAMFS_FILE uncompressed to temp dir $TEMPDIR..." 
+echo "Done."
+
+

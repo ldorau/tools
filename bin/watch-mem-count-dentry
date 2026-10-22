@@ -1,0 +1,22 @@
+#!/bin/bash
+
+function pws {
+        local MAX=$1
+        local STR=$2
+        local L=$(($MAX - $(echo "$STR" | wc -c)))
+        printf ' %.0s' $(seq -s' ' $L)
+        echo -n "$STR"
+}
+
+MEM_LOG=/tmp/watch-mem-dentry.log
+
+MAX1=$(cat $MEM_LOG | sort -k2 -nr | cut -d' ' -f13 | head -n1)
+MIN1=$(cat $MEM_LOG | sort -k2 -nr | cut -d' ' -f13 | tail -n1)
+
+MAX2=$(cat $MEM_LOG | sort -k3 -nr | cut -d' ' -f14 | head -n1)
+MIN2=$(cat $MEM_LOG | sort -k3 -nr | cut -d' ' -f14 | tail -n1)
+
+echo
+echo "* dentry:"
+echo -e "dentry1: max $(pws 7 ${MAX1}) | min $(pws 7 ${MIN1}) | max diff $(pws 5 $(($MAX1 - $MIN1)))"
+echo -e "dentry2: max $(pws 7 ${MAX2}) | min $(pws 7 ${MIN2}) | max diff $(pws 5 $(($MAX2 - $MIN2)))"

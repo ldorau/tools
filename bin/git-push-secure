@@ -1,0 +1,26 @@
+#!/bin/bash
+
+REPO=$1
+
+FILE_PRIVATE_NAME=$HOME/.private_name
+
+if [ -f $FILE_PRIVATE_NAME ]; then
+	PRIVATE_NAME=$(cat $FILE_PRIVATE_NAME)
+else
+	PRIVATE_NAME=$(whoami)
+fi
+
+ALLOWED=$(git remote -v | grep -e "$REPO" | grep -e "${PRIVATE_NAME}/")
+
+if [ "$FORBIDD" != "" -o "$ALLOWED" == "" ]; then
+	echo "ERROR: Pushing to foreign repos is forbidden!"
+	echo "       You have tried to push to the \"$REPO\" repo:"
+	echo
+	echo "       $ git push $*"
+	echo
+	git remote -v | grep -e "$REPO"
+	exit 1
+fi
+
+echo ">>> git push $*"
+git push $*

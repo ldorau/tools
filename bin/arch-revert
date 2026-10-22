@@ -1,0 +1,34 @@
+#!/bin/bash
+
+if ! which pacman > /dev/null 2>&1; then
+	echo "Huh, it is not an Arch Linux, man..."
+	exit 0
+fi
+
+mkdir -p ~/work
+
+FILE=$1
+if [ "$FILE" == "" ]; then
+	echo "Usage: $0 <pacman-log-file> [list-of-packages-to-skip]"
+	exit 1
+fi
+
+shift
+while [ "$1" != "" ]; do
+	EXCLUDE="-e $1 $EXCLUDE"
+	shift
+done
+
+if [ "$EXCLUDE" != "" ]; then
+	PKGS=$(cat $FILE | grep -v $EXCLUDE | grep -e upgraded | cut -d']' -f3- | cut -d'd' -f3- | cut -d' ' -f2)
+else
+	PKGS=$(cat $FILE | grep -e upgraded | cut -d']' -f3- | cut -d'd' -f3- | cut -d' ' -f2)
+fi
+
+for pkg in ${PKGS}; do
+	pkg_file=$(ls -1 -t /var/cache/pacman/pkg/${pkg}-* | grep -E -e "/${pkg}-[0-9]" | grep -v 'pkg.tar.zst.sig' | head -n2 | tail -n1)
+	LIST="${pkg_file} ${LIST}"
+done
+
+echo "sudo pacman -U ${LIST} --logfile ~/work/arch-update-$(date +%y-%m-%d-%T)-$$.log"
+sudo pacman -U ${LIST} --logfile ~/work/arch-update-$(date +%y-%m-%d-%T)-$$.log

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "sudo cp -v /usr/lib64/nvml_debug/* /usr/lib64/"
+sudo cp -v /usr/lib64/nvml_debug/* /usr/lib64/
+

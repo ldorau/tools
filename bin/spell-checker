@@ -1,0 +1,265 @@
+#!/bin/bash
+
+ORIGIN=$(git-get-origin)
+
+function grep_word()
+{
+	local word=$1
+	local _FILE=$2
+	local _OUT=$3
+	grep "$word" $_FILE |\
+		sed "s/\w$word//g" |\
+		sed "s/$word\w//g" |\
+		sed "s/[\_\.\'\<\^\/]$word//g" |\
+		sed "s/$word[\_\'\>\^\/\(]//g" |\
+		sed "s/$word\.\w//g" > $LOCAL_TEMP
+	grep "$word" $LOCAL_TEMP >> $_OUT
+	RESULT=$?
+}
+
+WORK_DIR=`pwd`
+
+# set debug options
+[ "$1" == "-d" ] && DEBUG=ON && shift && echo DEBUG = ON
+[ "$1" == "-a" ] && CHECK_ALL=ON && shift &&\
+	[ "$DEBUG" == "ON" ] && echo CHECK_ALL = ON
+
+SELF=$0 && [ "$DEBUG" == "ON" ] && echo SELF = $SELF
+[ -L $SELF ] && SELF=/$(ls -al $SELF | cut -d">" -f2 | cut -d"/" -f2-) &&\
+	[ "$DEBUG" == "ON" ] && echo SELF_HARD = $SELF
+
+if [ "`aspell -v 2>/dev/null`" == "" ]; then
+	echo "Error: aspell is not installed. Exiting."
+	exit 1
+fi
+
+if [ "$1" == "" ]; then
+	echo "Usage: $0 <NVML-git-repo-directory> [path-to-dictionary]"
+	exit 1
+fi
+
+NVML_DIR=$1 && [ "$NVML_DIR" == "." ] && NVML_DIR=$WORK_DIR
+[ "$DEBUG" == "ON" ] && echo NVML_DIR = $NVML_DIR
+
+if [ ! -d $NVML_DIR ]; then
+	echo "Directory $NVML_DIR does not exist. Exiting."
+	exit 1
+else
+	if [ ! -d $NVML_DIR/.git  ]; then
+		echo "Directory $NVML_DIR is not a git repository. Exiting."
+		exit 1
+	fi
+fi
+
+TOOLS_DIR=`echo $SELF | sed "s/\/[^\/]\+$//g" | sed "s/\/[^\/]\+$//g" `
+[ "$TOOLS_DIR" == "." ] && TOOLS_DIR=$WORK_DIR
+[ "$DEBUG" == "ON" ] && echo TOOLS_DIR = $TOOLS_DIR
+
+DIC_PATH=$2
+[ "$DIC_PATH" == "" ] && DIC_PATH=$TOOLS_DIR/spell-checker
+[ "$DIC_PATH" == "." ] && DIC_PATH=$WORK_DIR
+[ "$DEBUG" == "ON" ] && echo DIC_PATH = $DIC_PATH
+
+DICTIONARY=$DIC_PATH/spell-checker-dictionary
+[ "$DEBUG" == "ON" ] && echo DICTIONARY = $DICTIONARY
+
+if [ ! -f $DICTIONARY ]; then
+	echo "Error: cannot find the dictionary file: $DICTIONARY. Exiting."
+	echo
+	echo "Usage: $0 <NVML-git-repo-directory> [path-to-dictionary]"
+	exit 1
+fi
+
+[ "$2" != "" ] && TOOLS_DIR=`echo $DIC_PATH | sed "s/\/[^\/]\+$//g" `
+[ "$DEBUG" == "ON" ] && echo NEW_TOOLS_DIR = $TOOLS_DIR
+
+# temporary files
+TEMP_PATTERN=/tmp/spell-checker-temp-file-$$
+ALL_LINES=$TEMP_PATTERN-1
+ALL_WORDS=$TEMP_PATTERN-2
+UNIQ_WORDS=$TEMP_PATTERN-3
+FOUND_WORDS=$TEMP_PATTERN-4
+OUT=$TEMP_PATTERN-5
+ERROR_OUT=$TEMP_PATTERN-6
+COMMENTS=$TEMP_PATTERN-7
+COMMENTS_LINES=$TEMP_PATTERN-8
+DIFF=$TEMP_PATTERN-9
+TEMP=$TEMP_PATTERN-10
+LOCAL_TEMP=$TEMP_PATTERN-11
+rm -f $TEMP_PATTERN-*
+
+DEFAULT_BRANCH=$(git-get-default-branch)
+
+# gather files
+cd $NVML_DIR
+
+CURRENT_COMMIT=`git log --pretty=%H -1`
+[ "$DEBUG" == "ON" ] && echo CURRENT_COMMIT = $CURRENT_COMMIT
+
+COMMIT_MASTER=`git log --pretty=%H -1 $ORIGIN/$DEFAULT_BRANCH`
+[ "$DEBUG" == "ON" ] && echo COMMIT_MASTER = $COMMIT_MASTER
+
+DIFF_LINES_ADDED=0
+if [ "$CHECK_ALL" == "ON" -o "$CURRENT_COMMIT" == "$COMMIT_MASTER" ]; then
+	[ "$DEBUG" == "ON" ] && echo Notice: will check all files
+	CHECK_ALL=ON
+	FILES_ALL="git ls-tree -r --name-only HEAD"
+else
+	[ "$DEBUG" == "ON" ] && echo Notice: will check only changed files
+	BRANCH_OFF=$TOOLS_DIR/find-branch-off-commit/find-branch-off-commit
+	[ "$DEBUG" == "ON" ] && echo BRANCH_OFF = $BRANCH_OFF
+	if [ -f $BRANCH_OFF ]; then
+		BRANCH_OFF_COMMIT=`$BRANCH_OFF $CURRENT_COMMIT`
+		[ "$DEBUG" == "ON" ] && echo BRANCH_OFF_COMMIT = $BRANCH_OFF_COMMIT
+		FILES_ALL="git diff --name-only $BRANCH_OFF_COMMIT $CURRENT_COMMIT"
+		git diff $BRANCH_OFF_COMMIT $CURRENT_COMMIT | grep -e "^\+" |\
+			grep -v "^\+\+\+ b\/" > $DIFF
+		[ "$DEBUG" == "ON" -a -f $DIFF ] && echo DIFF = $DIFF
+		[ -f $DIFF ] && DIFF_LINES_ADDED=`cat $DIFF | wc -l`
+		[ "$DEBUG" == "ON" ] && echo DIFF_LINES_ADDED = $DIFF_LINES_ADDED
+	else
+		if [ "$DEBUG" == "ON" ]; then
+			echo File not found: $BRANCH_OFF
+			echo Notice: will check all files
+		fi
+		CHECK_ALL=ON
+		FILES_ALL="git ls-tree -r --name-only HEAD"
+	fi
+fi
+[ "$DEBUG" == "ON" ] && echo FILES_ALL = $FILES_ALL
+
+_TEXT_FILES=`$FILES_ALL | grep -E -e '*\.[13].md$' -e 'README*' `
+
+_CODE_FILES=`$FILES_ALL |\
+	grep -v -e 'src/jemalloc' -e 'testconfig.sh$' -e 'jemalloc.cfg' |\
+        grep -E -e '*\.[ch]$' -e '*\.[ch]pp$' -e '*\.py$' -e '*\.sh$'\
+		-e 'Makefile*' -e 'TEST*' -e 'src/test/match$' `
+
+# take only existing files
+TEXT_FILES=""
+for file in $_TEXT_FILES; do
+	[ -f $file ] && TEXT_FILES="$TEXT_FILES $file"
+done
+CODE_FILES=""
+for file in $_CODE_FILES; do
+	[ -f $file ] && CODE_FILES="$CODE_FILES $file"
+done
+
+ALL_FILES="$TEXT_FILES $CODE_FILES"
+CHECK_FILES=$TEXT_FILES
+
+if [ "$DEBUG" == "ON" -a "$CHECK_ALL" != "ON" ]; then
+	echo
+	echo TEXT_FILES = $TEXT_FILES
+	echo
+	echo CODE_FILES = $CODE_FILES
+	echo
+fi
+
+# extract comments - begin
+if [ "$CODE_FILES" != "" -a -d $DIC_PATH ]; then
+	cd $DIC_PATH
+	make > /dev/null 2>&1
+	EXTRACT=extract-comments
+	if [ -f ./$EXTRACT ]; then
+		EXTRACT=$DIC_PATH/$EXTRACT
+		[ "$DEBUG" == "ON" ] && echo EXTRACT = $EXTRACT
+		rm -f $COMMENTS $COMMENTS_LINES
+		cd $NVML_DIR
+		[ "$DEBUG" == "ON" ] && echo && echo Extracting comments...
+		for file in $CODE_FILES ; do
+		        [ -f $file ] && $EXTRACT $file $COMMENTS $COMMENTS_LINES
+		done
+		if [ "$DEBUG" == "ON" ]; then
+			LINES=0 && [ -f $COMMENTS ] && LINES=`cat $COMMENTS | wc -l`
+			echo "Comments extracted ($LINES lines)"
+		fi
+		[ -f $COMMENTS ] && CHECK_FILES="$CHECK_FILES $COMMENTS"
+	fi
+fi
+# extract comments - end
+
+if [ "$CHECK_FILES" == "" ]; then
+	[ "$DEBUG" == "ON" ] && echo No files to check.
+        echo "Spell-checker status is: SUCCESSFUL"
+        exit 0
+fi
+
+cd $NVML_DIR
+
+[ "$DEBUG" == "ON" ] && echo Checking files...
+rm -f $FOUND_WORDS
+for file in $CHECK_FILES ; do
+   if [ -f $file ]; then
+	FILE=$file
+	[ "$DEBUG" == "ON" ] && echo Checking file $FILE ...
+
+	# remove lines containing command lines examples:
+	#	$ command
+	grep -v -P '^[ \t]*\$ ' $FILE > $TEMP
+	FILE=$TEMP
+
+	# check spelling using Aspell
+	echo > $ERROR_OUT
+	aspell -a --ignore-case --dont-suggest -l en_US  < $FILE 2>$ERROR_OUT\
+		| grep " " | grep -v "International Ispell Version" > $ALL_LINES
+
+	if [ "`cat $ALL_LINES`" == "" -a "`cat $ERROR_OUT`" != "" ]; then
+		echo "Aspell error in the file $file:"
+		cat $ERROR_OUT
+	fi
+
+	# cut out words
+	cat $ALL_LINES | cut -d" " -f2 > $ALL_WORDS
+	cat $ALL_WORDS | sort | uniq > $UNIQ_WORDS
+
+	for word in $(cat $UNIQ_WORDS); do
+		GREP_FILE=yes
+		# check if the word is in the diff
+		if [ $DIFF_LINES_ADDED -gt 0 ]; then
+			grep_word $word $DIFF $OUT
+			if [ $RESULT -ne 0 ]; then
+				# the word is not in the diff
+				# so do not grep the file
+				GREP_FILE=no
+			fi
+		fi
+		RESULT=1
+		[ "$GREP_FILE" == "yes" ] && grep_word $word $FILE $OUT
+		if [ $RESULT -eq 0 ]; then
+			# look up words in our own dictionary
+			grep "=$word=" $DICTIONARY 2>&1 > /dev/null
+			[ $? -ne 0 ] && echo $word >> $FOUND_WORDS
+		fi
+	done 
+   fi
+done
+
+if [ ! -f $FOUND_WORDS ]; then
+        echo "Spell-checker status is: SUCCESSFUL"
+	rm -rf $TEMP_PATTERN*
+	exit 0
+else
+        echo "Found potential spelling errors:"
+	echo
+	cd $NVML_DIR
+	for word in $(cat $FOUND_WORDS | sort | uniq); do
+		rm -rf $OUT
+		if [ "$TEXT_FILES" != "" ]; then
+			grep -vnHRP '^[ \t]*\$ ' $TEXT_FILES  |\
+				grep -v "Binary file" > $TEMP
+			grep_word $word $TEMP $OUT
+		fi
+		if [ -f $COMMENTS_LINES ]; then
+			grep_word $word $COMMENTS_LINES $OUT
+		fi
+		if [ -f $OUT -a "`cat $OUT`" != "" ]; then
+			echo ">>> \"$word\":"
+			cat $OUT
+			echo
+		fi
+	done
+	echo "Spell-checker: found potential spelling errors."
+	rm -rf $TEMP_PATTERN*
+	exit 1
+fi

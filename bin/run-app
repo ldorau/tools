@@ -1,0 +1,12 @@
+#!/bin/bash
+
+RUNNING=`ps aux | grep $1 | grep -v grep | grep -v run-app`
+if [ "$RUNNING" != "" ]; then
+	echo "<$1> is already running now:"
+	echo "$RUNNING"
+	exit 1
+fi
+
+# run command:
+$* &
+

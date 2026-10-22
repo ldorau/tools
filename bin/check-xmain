@@ -1,0 +1,61 @@
+#!/bin/bash
+
+PR_TITLE=$1
+AUTHOR=$2
+
+if [ "$PR_TITLE" = "" ]; then
+	echo "Syntax: $0 <PR-title> [Author]"
+	exit 1
+fi
+
+[ "$AUTHOR" = "" ] && AUTHOR=$(git config user.name | awk '{print $NF}')
+
+echo "AUTHOR: $AUTHOR"
+echo
+
+CWD=$(pwd)
+
+if [ "$(basename $CWD)" != "applications.compilers.llvm-project" ]; then
+	if [ -d $HOME/work/intel-restricted/applications.compilers.llvm-project ]; then
+		cd $HOME/work/intel-restricted/applications.compilers.llvm-project
+	else
+		echo "Error: directory \"applications.compilers.llvm-project\" not found!"
+		exit 1
+	fi
+fi
+
+if [ ! -d .git ]; then
+	echo "Error: not a main directory of a git repo"
+	exit 1
+fi
+
+N=$(git remote -v | grep -e origin | grep -c -e "applications.compilers.llvm-project.git")
+if [ $N -ne 2 ]; then
+	echo "Error: not the \"applications.compilers.llvm-project\" git repo"
+	exit 1
+fi
+
+function check_branch() {
+	BR=$1
+	echo "Fetching the $BR branch ..."
+	git fetch origin $BR
+	git checkout $BR
+	git reset --hard FETCH_HEAD
+	echo
+	echo ">>> $BR:"
+	git log --author=$AUTHOR --oneline | grep -e "$PR_TITLE" || echo "(NOT FOUND)"
+	echo ">>> $BR (END)"
+	echo
+}
+
+CBR=$(git-get-current-branch)
+if [ "$CBR" = "xmain" ]; then
+	check_branch "xmain"
+	check_branch "xmain-rel"
+else
+	check_branch "xmain-rel"
+	check_branch "xmain"
+fi
+
+cd $CWD
+echo Done.

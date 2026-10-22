@@ -1,0 +1,28 @@
+#!/bin/bash
+# find . -name "*" | xargs grep -e "$1" | cut -d: -f1 | uniq
+
+if [ "$1" == "-v" ]; then
+	VERBOSE=1
+	shift
+fi
+
+if [ "$2" != "" ]; then
+	MASK=$2
+else
+	MASK="*"
+fi
+
+if [ "$VERBOSE" == "1" ]; then
+	echo "Looking for the string \"$1\" in files \"$MASK\"..."
+	echo "-----"
+fi
+
+echo 'find . -name "$MASK" -print0 | xargs -0 grep -nH -A0$3 -B0$4 -e "$1" 2>/dev/null | grep -v "/.git/" | grep -v "Binary file "'
+find . -name "$MASK" -print0 | xargs -0 grep -nH -A0$3 -B0$4 -e "$1" 2>/dev/null | grep -v "/.git/" | grep -v "Binary file "
+
+if [ "$VERBOSE" == "1" ]; then
+	echo "-----"
+	echo "Strings \"$1\" in files \"$MASK\""
+fi
+
+

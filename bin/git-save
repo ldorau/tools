@@ -1,0 +1,4 @@
+#!/bin/bash
+
+git commit -a --amend --no-edit
+git-push-current-branch -f

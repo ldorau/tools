@@ -1,0 +1,19 @@
+#!/bin/bash
+CONFIG=./src/test/testconfig.sh
+
+if [ "$1" != "ON" -a "$1" != "OFF" ]; then
+	echo "Usage: $0 <ON|OFF>"
+	exit 1
+fi
+
+if [ "$1" == "ON" ]; then
+	git am < ~/bin/0001-make-check-test-PMEM.patch
+	if [ $? -ne 0 ]; then
+		echo "Error: git am failed"
+	        git am --abort
+	fi
+	sed -i 's/^#PMEM_FS_DIR/PMEM_FS_DIR/g' $CONFIG
+else
+	sed -i 's/^PMEM_FS_DIR/#PMEM_FS_DIR/g' $CONFIG
+fi
+

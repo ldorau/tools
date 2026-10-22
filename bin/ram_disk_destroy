@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ "`mount | grep "\/tmpfs"`" != "" ]; then
+	sudo umount /tmpfs
+	if [ $? -eq 0 ]; then
+		echo "RAM disk unmounted"
+	else
+		echo "RAM disk unmounting FAILED:"
+		mount | grep "\/tmpfs"
+		echo
+		echo "Open files (lsof):"
+		lsof  | grep "\/tmpfs"
+	fi
+else
+	echo "Nothing to unmount found :-("
+fi

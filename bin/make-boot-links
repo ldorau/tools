@@ -1,0 +1,28 @@
+#!/bin/bash
+if [ "$1" == "rm" ]; then
+        if [ "$2" == "" ]; then
+                rm -r -v /boot/initrd-smp
+                rm -r -v /boot/System.map-smp
+                rm -r -v /boot/vmlinuz-smp
+        else
+                rm -r -v /boot/initrd-smp-$2
+                rm -r -v /boot/System.map-smp-$2
+                rm -r -v /boot/vmlinuz-smp-$2
+        fi
+elif [ "$1" == "add" ]; then
+        if [ "$2" == "" ]; then
+                ln -s -v /boot/initramfs-$3.img /boot/initrd-smp
+                ln -s -v /boot/System.map-$3 /boot/System.map-smp
+                ln -s -v /boot/vmlinuz-$3 /boot/vmlinuz-smp
+        else
+                ln -s -v /boot/initramfs-$3.img /boot/initrd-smp-$2
+                ln -s -v /boot/System.map-$3 /boot/System.map-smp-$2
+                ln -s -v /boot/vmlinuz-$3 /boot/vmlinuz-smp-$2
+        fi
+else
+        echo "Usage:"
+        echo "$0 <add> <link-name> <kernel-version>"
+        echo "$0 <rm>  <link-name>"
+fi
+
+

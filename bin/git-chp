@@ -1,0 +1,28 @@
+#!/bin/bash
+
+[ "$1" == "-e" ] && EDIT="" && shift || EDIT="--no-edit"
+
+if [ "$1" == "" ]; then
+        echo "ERROR: no commit given"
+        exit 0;
+fi
+
+COMMIT=$(git log --pretty=%H -1)
+BRANCH_TOP=cherry-pick-$$-top
+BRANCH_PRV=cherry-pick-$$-prev
+
+echo "Rebasing commit $COMMIT..."
+git branch $BRANCH_TOP
+git format-patch -1
+git reset --hard HEAD^
+git branch $BRANCH_PRV
+
+git reset --hard $1
+git cherry-pick $COMMIT
+git reset $1
+git commit -a --amend $EDIT
+
+git cherry-pick $1..$BRANCH_PRV
+
+git branch -D $BRANCH_TOP
+git branch -D $BRANCH_PRV

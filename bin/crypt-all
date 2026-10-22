@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+
+/usr/local/bin/crypt
+/usr/local/bin/crypt-old
+/usr/local/bin/crypt-arch
+

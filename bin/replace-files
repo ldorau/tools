@@ -1,0 +1,32 @@
+#!/bin/bash
+
+if [ "$2" == "" ]; then
+        echo "usage: $0 <string1> <string2> [file-pattern]"
+        echo "Replaces <string1> with <string2> in files [file-pattern]"
+        exit 0;
+fi
+
+[ "$3" == "" ] && MATCH="*" || MATCH="$3"
+
+echo "Replacing $1 with $2 in files $MATCH ..."
+
+TEMP_DIR="../.temp-dir-git-$$"
+
+rm -rf $TEMP_DIR
+mv -f .git $TEMP_DIR 2>/dev/null
+ 
+find . -name "$MATCH" -type d | \
+	while IFS='' read -r line || [[ -n "$line" ]]; do
+		f="$line"
+		NEW_NAME=$(echo "$f" | sed "s/$1/$2/g")
+		[ -f "$f" -a "$f" != "$NEW_NAME" ] && $4 mv -v "$f" "$NEW_NAME"
+	done
+
+find . -name "$MATCH" -type f | \
+	while IFS='' read -r line || [[ -n "$line" ]]; do
+		f="$line"
+		NEW_NAME=$(echo "$f" | sed "s/$1/$2/g")
+		[ -f "$f" -a "$f" != "$NEW_NAME" ] && $4 mv -v "$f" "$NEW_NAME"
+	done
+
+mv -f $TEMP_DIR .git 2>/dev/null

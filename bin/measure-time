@@ -1,0 +1,15 @@
+#!/bin/bash
+
+start=$(date +%s)
+
+time $*
+
+end=$(date +%s)
+seconds=$(($end-$start))
+minutes=$((($end-$start)/60))
+left_sec=$(($seconds-60*minutes))
+
+echo
+echo "ran for $seconds seconds ($minutes min $left_sec sec)"
+echo
+

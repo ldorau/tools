@@ -1,0 +1,9 @@
+#!/bin/bash
+
+STOP_FILE_1=/tmp/temp-stop-make-fix
+STOP_FILE_2=/tmp/temp-stop-vgrp
+STOP_FILE_3=/tmp/temp-stop-vv
+
+touch $STOP_FILE_1
+touch $STOP_FILE_2
+touch $STOP_FILE_3

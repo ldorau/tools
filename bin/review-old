@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ "$1" == "" ]; then
+	echo "usage: $0 <branch-to-review>"
+	exit 0
+fi
+
+main
+git pull
+git branch -D review
+git branch review origin/$1
+git co review
+git log -1
+echo
+
