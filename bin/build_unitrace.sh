@@ -91,7 +91,7 @@ fi
 # All intermediate build artifacts go into a temporary directory that is
 # printed at the end so the user can clean it up manually if desired.
 WORKDIR="$(mktemp -d)"
-NPROC="$(nproc)"
+NPROC="$(( $(nproc) / 2 ))"
 
 echo "=== Building unitrace tag: ${TAG} ==="
 echo "=== Install prefix: ${PREFIX} ==="

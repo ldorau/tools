@@ -3,7 +3,7 @@
 set +e
 set -x
 
-NPROC=64
+NPROC=$(( $(nproc) / 2 ))
 if [ "$1" = "N" ]; then
 	NPROC=$2
 	shift 2
@@ -47,24 +47,24 @@ python3 $GITHUB_WORKSPACE/llvm/buildbot/configure.py \
 	# --ci-defaults --native_cpu \
 	# --ci-defaults --hip --cuda --native_cpu \
 
-cmake --build $GITHUB_WORKSPACE/llvm/build --target sycl-toolchain -j64 || cmake --build $GITHUB_WORKSPACE/llvm/build --target sycl-toolchain || ( echo RV=$? ; echo "Build FAILED (target sycl-toolchain)" ; exit 1 )
+cmake --build $GITHUB_WORKSPACE/llvm/build --target sycl-toolchain -j $NPROC || cmake --build $GITHUB_WORKSPACE/llvm/build --target sycl-toolchain -j $NPROC || ( echo RV=$? ; echo "Build FAILED (target sycl-toolchain)" ; exit 1 )
 echo "Build PASSED (target sycl-toolchain)"
 
 # check-sycl-unittests
-cmake --build $GITHUB_WORKSPACE/llvm/build --target check-sycl-unittests -j64 || cmake --build $GITHUB_WORKSPACE/llvm/build --target check-sycl-unittests --verbose || ( echo RV=$? ; echo "Tests FAILED (target check-sycl-unittests)" ; exit 1 )
+cmake --build $GITHUB_WORKSPACE/llvm/build --target check-sycl-unittests -j $NPROC || cmake --build $GITHUB_WORKSPACE/llvm/build --target check-sycl-unittests -j $NPROC --verbose || ( echo RV=$? ; echo "Tests FAILED (target check-sycl-unittests)" ; exit 1 )
 echo "Tests PASSED (target check-sycl-unittests)"
 
 # check-unified-runtime-conformance
-cmake --build . -j64 -- check-unified-runtime-conformance || cmake --build . -- check-unified-runtime-conformance || ( echo RV=$? ; echo "Tests FAILED (target check-unified-runtime-conformance)" ; exit 1 )
+cmake --build . -j $NPROC -- check-unified-runtime-conformance || cmake --build . -j $NPROC -- check-unified-runtime-conformance || ( echo RV=$? ; echo "Tests FAILED (target check-unified-runtime-conformance)" ; exit 1 )
 echo "Tests PASSED (target check-unified-runtime-conformance)"
 
 exit 0
 
 # check-sycl
-cmake --build $GITHUB_WORKSPACE/llvm/build --target check-sycl -j64 || ( echo RV=$? ; echo "Tests FAILED (target check-sycl)" ; exit 1 )
+cmake --build $GITHUB_WORKSPACE/llvm/build --target check-sycl -j $NPROC || ( echo RV=$? ; echo "Tests FAILED (target check-sycl)" ; exit 1 )
 echo "Tests PASSED (target check-sycl)"
 
 # check-sycl-e2e
 cd $GITHUB_WORKSPACE/llvm
 cmake -GNinja -B./build-e2e -S./sycl/test-e2e -DCMAKE_CXX_COMPILER="$(pwd)/build/bin/clang++" -DLLVM_LIT="$(pwd)/llvm/utils/lit/lit.py"
-ninja -C build-e2e check-sycl-e2e -j48
+ninja -C build-e2e check-sycl-e2e -j $NPROC

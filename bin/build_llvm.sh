@@ -3,11 +3,11 @@
 # export DIR="$HOME/work/llvm"
 # cd $DIR
 # python3 ./buildbot/configure.py -t Debug -w .. -s . -o ./build --native_cpu -DCMAKE_INSTALL_PREFIX=$DIR/build/install -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DLLVM_INSTALL_UTILS=ON -DUR_BUILD_ADAPTER_L0=ON -DUR_BUILD_ADAPTER_L0_V2=ON -DUR_BUILD_ADAPTER_HIP=OFF -DUR_BUILD_ADAPTER_CUDA=OFF -DUR_BUILD_ADAPTER_OPENCL=ON -DUR_BUILD_ADAPTER_NATIVE_CPU=ON -DUR_USE_EXTERNAL_UMF=OFF
-# python3 ./buildbot/compile.py -s . -o ./build -j 128
-# python3 ./buildbot/compile.py -s . -o ./build -t sycl-toolchain -j 128
-# python3 ./buildbot/compile.py -s . -o ./build -t FileCheck -j 128
-# python3 ./buildbot/compile.py -s . -o ./build -t not -j 128
-# python3 ./buildbot/compile.py -s . -o ./build -t check-sycl-unittests -j 128
+# python3 ./buildbot/compile.py -s . -o ./build -j $(( $(nproc) / 2 ))
+# python3 ./buildbot/compile.py -s . -o ./build -t sycl-toolchain -j $(( $(nproc) / 2 ))
+# python3 ./buildbot/compile.py -s . -o ./build -t FileCheck -j $(( $(nproc) / 2 ))
+# python3 ./buildbot/compile.py -s . -o ./build -t not -j $(( $(nproc) / 2 ))
+# python3 ./buildbot/compile.py -s . -o ./build -t check-sycl-unittests -j $(( $(nproc) / 2 ))
 #
 
 export ZE_ENABLE_ALT_DRIVERS=~/workdir/compute-runtime-build/bin/libze_intel_gpu.so
@@ -18,7 +18,7 @@ set -x
 
 [ "$VIRTUAL_ENV" = "" ] && ( cd ; python3 -m venv .venv ; source .venv/bin/activate ; cd - )
 
-NPROC=64
+NPROC=$(( $(nproc) / 2 ))
 if [ "$1" = "N" ]; then
 	NPROC=$2
 	shift 2
@@ -84,11 +84,11 @@ fi
 if [ "$1" = "cmake" ]; then
 	cd $BUILD_DIR
 	# cd $SOURCE_DIR
-	cmake --build $GITHUB_WORKSPACE/llvm/build --target sycl-toolchain -j $NPROC || cmake --build $GITHUB_WORKSPACE/llvm/build --target sycl-toolchain || ( echo RV=$? ; echo "Build FAILED (target sycl-toolchain)" ; exit 1 )
+	cmake --build $GITHUB_WORKSPACE/llvm/build --target sycl-toolchain -j $NPROC || cmake --build $GITHUB_WORKSPACE/llvm/build --target sycl-toolchain -j $NPROC || ( echo RV=$? ; echo "Build FAILED (target sycl-toolchain)" ; exit 1 )
 	echo "Build PASSED (target sycl-toolchain)"
 
 	# check-sycl-unittests
-	cmake --build $GITHUB_WORKSPACE/llvm/build --target check-sycl-unittests -j $NPROC || cmake --build $GITHUB_WORKSPACE/llvm/build --target check-sycl-unittests --verbose || ( echo RV=$? ; echo "Tests FAILED (target check-sycl-unittests)" ; exit 1 )
+	cmake --build $GITHUB_WORKSPACE/llvm/build --target check-sycl-unittests -j $NPROC || cmake --build $GITHUB_WORKSPACE/llvm/build --target check-sycl-unittests -j $NPROC --verbose || ( echo RV=$? ; echo "Tests FAILED (target check-sycl-unittests)" ; exit 1 )
 	echo "Tests PASSED (target check-sycl-unittests)"
 
 	# check-sycl
@@ -111,7 +111,7 @@ function build_target_j() {
 
 function build_target() {
 	TARGET=$2
-	build_target_j $* -j $NPROC || build_target_j $* || ( echo RV=$? ; echo "Build FAILED (target $TARGET)" ; exit 1 )
+	build_target_j $* -j $NPROC || build_target_j $* -j $NPROC || ( echo RV=$? ; echo "Build FAILED (target $TARGET)" ; exit 1 )
 	echo "Build PASSED (target $TARGET)"
 }
 

@@ -93,7 +93,7 @@ if [ -n "${BUILD_TMPDIR:-}" ]; then
 else
     WORKDIR="$(mktemp -d)"
 fi
-NPROC="$(nproc)"
+NPROC="$(( $(nproc) / 2 ))"
 
 echo "=== Building level-zero loader tag: ${TAG} ==="
 echo "=== Install prefix: ${PREFIX} ==="

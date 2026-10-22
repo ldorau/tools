@@ -17,7 +17,7 @@ alias ed="$TOOLS/ed"
 
 alias date-git='date +"%a %b %-d %H:%M:%S %Y %z"'
 alias ga='git add'
-alias gaa='git add *'
+alias gaa='git add -A'
 alias gau='git-add-unmerged'
 alias gb='git-branch'
 alias gbrh='git-branch-reset-here'

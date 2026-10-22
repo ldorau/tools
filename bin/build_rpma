@@ -52,7 +52,7 @@ fi
 # run cmake again with RPMA_TESTING_IP set
 cmake ..
 
-CC=$CC make -j$(nproc)
+CC=$CC make -j $(( $(nproc) / 2 ))
 [ "${TESTS}" == "OFF" ] && exit 0
 ctest --output-on-failure -R none
 set +x

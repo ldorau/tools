@@ -1,0 +1,6 @@
+#!/bin/bash
+
+STOP_FILE="/tmp/nf-monitor.stop"
+touch $STOP_FILE
+
+$HOME/work/mytools/bin/nf-allow

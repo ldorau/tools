@@ -4,7 +4,7 @@ set -ex
 
 [ "$VIRTUAL_ENV" = "" ] && ( cd ; python3 -m venv .venv ; source .venv/bin/activate ; cd - )
 
-NPROC=128
+NPROC=$(( $(nproc) / 2 ))
 if [ "$1" = "N" ]; then
 	NPROC=$2
 	shift 2

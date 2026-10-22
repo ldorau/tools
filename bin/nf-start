@@ -1,0 +1,53 @@
+#!/bin/bash
+
+function ping_once() {
+	ping -c 1 -W 1 $1 > /dev/null 2>&1
+}
+
+function e() {
+	echo $*
+}
+
+function continue_yn() {
+	echo
+	echo -n "Continue (y/n)?"
+	read -n1 resp
+	echo
+	if [ "$resp" != "y" ]; then
+		$HOME/work/mytools/bin/nf-allow
+		exit 0
+	fi
+}
+
+function since() {
+	local diff=$(( $(date +%s) - $(date -d "$1" +%s) ))
+	printf '%dd %dh %dm\n' $((diff/86400)) $((diff%86400/3600)) $((diff%3600/60))
+}
+
+IPS="203 204 208"
+
+for N in $IPS; do
+	if ping_once 192.168.0.$N; then
+		echo "IP $N is online"
+		exit 0
+	fi
+done
+
+N=$(gpl "netflix.com from 192.168" | wc -l)
+if [ $N -ge 1 ]; then
+	echo "Last netflix.com:"
+	gpl "netflix.com from 192.168" | tail -n1
+	DATE=$(gpl "netflix.com from 192.168" | tail -n1 | cut -d' ' -f1-3)
+	AGO=$(since "$DATE")
+	echo "($AGO ago)"
+	continue_yn
+fi
+
+$HOME/work/mytools/bin/nf-deny
+
+continue_yn
+
+nohup $HOME/work/mytools/bin/nf-monitor > /tmp/nf-monitor &
+
+echo END
+exit 0

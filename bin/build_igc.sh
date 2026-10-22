@@ -95,7 +95,7 @@ if [ -n "${BUILD_TMPDIR:-}" ]; then
 else
     WORKDIR="$(mktemp -d)"
 fi
-NPROC="$(nproc)"
+NPROC="$(( $(nproc) / 2 ))"
 
 echo "=== Building IGC ref: ${IGC_REF} ==="
 echo "=== Install prefix: ${PREFIX} ==="
@@ -250,7 +250,7 @@ cmake --build . --parallel "${NPROC}"
 # --------------------------------------------------------------------------
 echo ""
 echo "=== [5/5] Installing IGC to ${PREFIX} ==="
-cmake --build . --target install
+cmake --build . --parallel "${NPROC}" --target install
 
 # --------------------------------------------------------------------------
 # Summary
