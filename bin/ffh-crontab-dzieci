@@ -1,0 +1,40 @@
+#!/bin/bash
+
+HOSTNAME="oldasus"
+USER="dzieci"
+
+CRON_SCRIPT="ffh-crontab-dzieci"
+DZIECI_BIN="$HOME/bin"
+DZIECI_CRON_SCRIPT="$DZIECI_BIN/$CRON_SCRIPT"
+CRON="*/15 * * * *     $DZIECI_CRON_SCRIPT"
+
+set -x
+
+if [ "$(hostname)" != "$HOSTNAME" -o "$(whoami)" != "$USER" ]; then
+	echo "Error: hostname: $(hostname) user: $(whoami)"
+	echo exit 1 ###
+fi
+
+echo "Crontab:"
+crontab -l
+
+if ! crontab -l | grep -q -e "$CRON_SCRIPT"; then
+	TMP=/tmp/temp-$NAME-crontab
+	crontab -l > $TMP
+	echo -e "$CRON" >> $TMP
+	crontab $TMP && echo "OK: crontab successfully installed" || echo "Error: failed to install crontab"
+	echo "Crontab:"
+	cat $TMP
+	rm $TMP
+fi
+
+FIND=$(find /home/dzieci/.mozilla/firefox -name places.sqlite)
+echo FIND=$FIND
+
+[ "$FIND" = "" ] && exit 0
+
+HISTORY=$(ls -t -1 $FIND | head -n1)
+echo HISTORY=$HISTORY
+
+// cp: dzieci -> rpi
+// sudo_pass cp $HISTORY $SAVED_HISTORY

@@ -16,8 +16,8 @@ fi
 
 git pull
 
-if ! git status | grep "nothing to commit, working tree clean" >/dev/null 2>&1; then
-	git status | grep "Untracked files" >/dev/null 2>&1 && git add -A || true
+if ! git status | grep -q -e "nothing to commit, working tree clean"; then
+	git status | grep -q -e "Untracked files" && git add -A || true
 	git commit -a -m "$TITLE" || true
 	if [ $AUTO -eq 1 ]; then
 		git branch -D $BRANCH 2>/dev/null || true
