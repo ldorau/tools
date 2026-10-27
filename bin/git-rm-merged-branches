@@ -1,4 +1,12 @@
 #!/bin/bash
+#
+# Removes branches that are already merged into the default branches
+# (their tip commit is contained in $ORIGIN/<default> or $UPSTREAM/<default>):
+# - $ORIGIN/* branches (on the server) and the local branches with the same name,
+# - local branches,
+# - $UPSTREAM/* and other remote-tracking refs (only locally, never on the server).
+# Default, release and not merged branches are never removed.
+#
 
 ORIGIN=$(git-get-origin)
 UPSTREAM=$(git-get-upstream)
@@ -9,17 +17,18 @@ EXCLUSIONS="$(git-get-default-branches | xargs)"
 function in_exclusions() {
 	local YES=0
 	local NO=1
+	local BRANCH=$1
+	local ex
 	[ "$EXCLUSIONS" == "" ] && return $NO
-	BRANCH=$1
-	for br in $EXCLUSIONS; do
-		[ "$br" == "$BRANCH" ] && return $YES
+	for ex in $EXCLUSIONS; do
+		[ "$ex" == "$BRANCH" ] && return $YES
 	done
 	return $NO
 }
 
 function verify_branch() {
 	# remove stable-[0-9].[0-9], devel-[0-9].[0-9] and man-pages
-	REST=$(echo $1 \
+	local REST=$(echo $1 \
 		| sed "s/$DEFAULT_BRANCH//g" \
 		| sed 's/man-pages//g' \
 		| sed 's/stable-[0-9].[0-9]//g' \
@@ -28,8 +37,24 @@ function verify_branch() {
 	echo $REST
 }
 
+# default, release and other long-lived branches - never remove them
+function is_protected() {
+	local br=$1
+	in_exclusions $br && return 0
+	[ "$(verify_branch $br)" == "" ] && return 0
+	case "$br" in
+	HEAD|main|master|develop|sycl|gh-pages|man-pages) return 0 ;;
+	v[0-9]*|stable-*|devel-*|release*|*.x) return 0 ;;
+	esac
+	return 1
+}
+
 function branch_exists() {
 	git log -1 $1 >/dev/null 2>&1
+}
+
+function local_branch_exists() {
+	git show-ref --verify --quiet refs/heads/$1
 }
 
 function get_commit() {
@@ -40,94 +65,74 @@ ALL_COMMITS=/tmp/all-commits-$$
 rm -f $ALL_COMMITS
 touch $ALL_COMMITS
 
+# tformat: every commit (also the last one) has to be in a separate line
 for b in $(git-get-default-branches); do
-	branch_exists $ORIGIN/$b && git log --pretty=format:%H $ORIGIN/$b -- >> $ALL_COMMITS
+	branch_exists $ORIGIN/$b && git log --pretty=tformat:%H $ORIGIN/$b -- >> $ALL_COMMITS
+	[ "$UPSTREAM" != "" ] && branch_exists $UPSTREAM/$b && \
+		git log --pretty=tformat:%H $UPSTREAM/$b -- >> $ALL_COMMITS
 done
 
-REMOTEB=$(git branch -a | grep "remotes/$ORIGIN/" | grep -v -e "HEAD" -e " -> ")
-# echo "Remote branches:"
-# echo "$REMOTEB"
+if [ ! -s $ALL_COMMITS ]; then
+	echo "ERROR: no default branches found - nothing can be verified as merged"
+	rm -f $ALL_COMMITS
+	exit 1
+fi
+
+# the tip commit of the given branch is contained in one of the default branches
+function is_merged() {
+	local commit=$(get_commit $1)
+	[ "$commit" == "" ] && return 1
+	grep -q -x "$commit" $ALL_COMMITS
+}
+
+REMOTEB=$(git branch -r | grep -e "^ *$ORIGIN/" | grep -v -e "HEAD" -e " -> ")
 for b in $REMOTEB; do
-	# echo "Checking remote branch: $b"
+	br=$(echo $b | cut -d/ -f2-)
+	is_protected $br && continue
+	is_merged $b || continue
 
-	br=$(echo $b | cut -d/ -f3-)
-	rest=$(verify_branch $br)
-	[ "$rest" == "" ] && continue
+	echo Removing remote branch remotes/$b ...
+	git-push-secure $ORIGIN :$br
+	echo
 
-	commit_r=$(get_commit $b)
-	grep $commit_r $ALL_COMMITS > /dev/null 2>&1
-	if [ $? -eq 0 ]; then
-		b=$(echo $b | cut -d/ -f3-)
-		in_exclusions $b && continue
-
-		echo Removing remote branch remotes/$ORIGIN/$b ...
-
-		git-push-secure $ORIGIN :$b
+	if local_branch_exists $br && is_merged $br; then
+		echo Removing local branch $br ...
+		git branch -D $br
 		echo
-
-		is_local=`git branch | grep $b`
-		if [ "$is_local" != "" ]; then
-			in_exclusions $b && continue
-			# echo "Checking local branch: $b"
-			commit_l=$(get_commit $b)
-			if [ "commit_l" == "commit_r" ]; then
-				remove=0
-			else
-				grep $commit_l $ALL_COMMITS 2>&1 > /dev/null
-				remove=$?
-			fi
-
-			if [ $remove -eq 0 ]; then
-				echo Removing local branch $b ...
-				git branch -D $b
-				echo
-			fi
-		fi
 	fi
 done
 
-LOCALB=$(git branch | sed 's/\*/ /g' | grep -v -e "$DEFAULT_BRANCH" -e "man-pages" -e "devel" -e "HEAD" -e "stable-" -e "devel-" -e " -> ")
-# echo "Local branches:"
-# echo "$LOCALB"
+LOCALB=$(git for-each-ref --format='%(refname:short)' refs/heads/)
 for b in $LOCALB; do
-	# echo "Checking branch: $b"
-	is_local=`git branch | grep $b`
-	[ "$is_local" == "" ] && continue
+	is_protected $b && continue
+	is_merged $b || continue
 
-	rest=$(verify_branch $b)
-	[ "$rest" == "" ] && continue
-
-	in_exclusions $b && continue
-
-	commit=$(get_commit $b)
-	grep $commit $ALL_COMMITS 2>&1 > /dev/null
-	if [ $? -eq 0 ]; then
-		echo Removing local branch $b ...
-		git branch -D $b
-		echo
-	fi
+	echo Removing local branch $b ...
+	git branch -D $b
+	echo
 done
 
-# remove all "remotes/$UPSTREAM/" branches
-REMOTEB=$(git branch -a | grep "remotes/$UPSTREAM/" | grep -v -e "HEAD" -e " -> ")
-for b in $REMOTEB; do
-	br=$(echo $b | cut -d/ -f3-)
-	branch_exists $br && continue
-	branch_exists $ORIGIN/$br && continue
-	git branch -r -d $UPSTREAM/$br
-done
+# remove merged "remotes/$UPSTREAM/" branches (only remote-tracking refs)
+if [ "$UPSTREAM" != "" ]; then
+	REMOTEB=$(git branch -r | grep -e "^ *$UPSTREAM/" | grep -v -e "HEAD" -e " -> ")
+	for b in $REMOTEB; do
+		br=$(echo $b | cut -d/ -f2-)
+		is_protected $br && continue
+		is_merged $b || continue
+		local_branch_exists $br && continue
+		branch_exists $ORIGIN/$br && continue
+		git branch -r -d $b
+	done
+fi
 
-# remove all remote and not ($ORIGIN or $UPSTREAM) branches
-REMOTEB=$(git branch -a | grep "remotes/" | grep -v -e "remotes/$ORIGIN/" -e "remotes/$UPSTREAM/" -e "HEAD" -e " -> ")
+# remove merged remote-tracking refs of other remotes (not $ORIGIN nor $UPSTREAM)
+REMOTEB=$(git branch -r | grep -v -e "^ *$ORIGIN/" -e "HEAD" -e " -> ")
+[ "$UPSTREAM" != "" ] && REMOTEB=$(echo "$REMOTEB" | grep -v -e "^ *$UPSTREAM/")
 for b in $REMOTEB; do
-	br=$(echo $b | cut -d/ -f3-)
-	remote=$(echo $b | cut -d/ -f2)
-	if branch_exists $br; then
-		commit_local=$(get_commit $br)
-		commit_remote=$(get_commit $remote/$br)
-		[ "$commit_local" == "$commit_remote" ] && continue
-	fi
-	git branch -r -d $remote/$br
+	br=$(echo $b | cut -d/ -f2-)
+	is_protected $br && continue
+	is_merged $b || continue
+	git branch -r -d $b
 done
 
 rm -f $ALL_COMMITS
