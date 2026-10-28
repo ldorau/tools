@@ -1,0 +1,24 @@
+#!/bin/bash
+
+OPT=$1
+
+[ "$OPT" = "-r" ] && OPT="--recheck"
+
+date
+
+echo
+echo "=== LLVM === ($OPT)"
+
+while ! check-reviews.py -q $OPT ; do 
+	sleep 1
+done
+
+echo
+echo "=== UMF === ($OPT)"
+
+while ! check-reviews.py -q $OPT --repo "oneapi-src/unified-memory-framework"; do 
+	sleep 1
+done
+echo
+
+date
