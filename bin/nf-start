@@ -17,21 +17,13 @@ function continue_yn() {
 		$HOME/work/mytools/bin/nf-allow
 		exit 0
 	fi
+	echo
 }
 
 function since() {
 	local diff=$(( $(date +%s) - $(date -d "$1" +%s) ))
 	printf '%dd %dh %dm\n' $((diff/86400)) $((diff%86400/3600)) $((diff%3600/60))
 }
-
-IPS="203 204 208"
-
-for N in $IPS; do
-	if ping_once 192.168.0.$N; then
-		echo "IP $N is online"
-		exit 0
-	fi
-done
 
 N=$(gpl "netflix.com from 192.168" | wc -l)
 if [ $N -ge 1 ]; then
@@ -42,6 +34,15 @@ if [ $N -ge 1 ]; then
 	echo "($AGO ago)"
 	continue_yn
 fi
+
+IPS="203 204 208"
+
+for N in $IPS; do
+	if ping_once 192.168.0.$N; then
+		echo "IP $N is online"
+		continue_yn
+	fi
+done
 
 $HOME/work/mytools/bin/nf-deny
 

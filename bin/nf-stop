@@ -3,4 +3,7 @@
 STOP_FILE="/tmp/nf-monitor.stop"
 touch $STOP_FILE
 
+gpl "netflix.com from 192.168" | tail -n5
+echo
+
 $HOME/work/mytools/bin/nf-allow
