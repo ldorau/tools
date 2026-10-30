@@ -19,6 +19,13 @@ echo "=== UMF === ($OPT)"
 while ! check-reviews.py -q $OPT --repo "oneapi-src/unified-memory-framework"; do 
 	sleep 1
 done
-echo
 
+echo
+echo "=== oneTBB === ($OPT)"
+
+while ! check-reviews.py -q $OPT --repo "uxlfoundation/oneTBB"; do
+	sleep 1
+done
+
+echo
 date
