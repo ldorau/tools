@@ -24,11 +24,11 @@ done
 
 [ ! -f $TMP_2 ] && echo "All is OK." && exit 0
 
-echo "Removing from $TOOLS files missing in $MYTOOLS:"
+echo "Removing from $TOOLS files:"
 cat $TMP_2
 cd $HOME/work/tools
 for file in $(cat $TMP_2); do
-	if [ -f $TOOLS/$file -a ! -f $MYTOOLS/$file ]; then
+	if [ -f $TOOLS/$file ]; then
 		echo "Removing: $TOOLS/$file ..."
 		rm -v $TOOLS/$file
 		git add ./bin/$file
