@@ -2,4 +2,10 @@
 
 echo "git commit -a --no-edit -m \"$1\""
 git commit -a --no-edit -m "$1"
-git-push-current-branch -f
+
+N=0
+while ! git-push-current-branch -f; do
+	N=$(( $N + 1 ))
+	[ $N -eq 5 ] && break
+	sleep 1m
+done
