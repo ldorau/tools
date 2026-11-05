@@ -1,0 +1,11 @@
+#!/bin/bash
+
+function is_process() {
+	ps aux | grep -e "$1" | grep -v -e grep | grep -e "$1"
+}
+
+rm -f /tmp/gw-wait-*
+
+is_process "isback.sh " && killall isback.sh
+is_process "isback.sh " && sleep 1
+is_process "isback.sh " && killall -9 isback.sh
