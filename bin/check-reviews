@@ -7,9 +7,9 @@ OPT=$1
 date
 
 echo
-echo "=== LLVM === ($OPT)"
+echo "=== oneTBB === ($OPT)"
 
-while ! check-reviews.py -q $OPT ; do 
+while ! check-reviews.py -q $OPT --repo "uxlfoundation/oneTBB"; do
 	sleep 1
 done
 
@@ -21,9 +21,9 @@ while ! check-reviews.py -q $OPT --repo "oneapi-src/unified-memory-framework"; d
 done
 
 echo
-echo "=== oneTBB === ($OPT)"
+echo "=== LLVM === ($OPT)"
 
-while ! check-reviews.py -q $OPT --repo "uxlfoundation/oneTBB"; do
+while ! check-reviews.py -q $OPT ; do
 	sleep 1
 done
 
