@@ -26,9 +26,14 @@
 # LD_LIBRARY_PATH ahead of any older system-installed loader.
 #
 # Usage:
-#   ./build_level_zero_loader.sh <tag> [install_prefix] [build_type]
+#   ./build_level_zero_loader.sh [tag] [install_prefix] [build_type]
+#
+# If [tag] is omitted or empty (""), the newest release tag available in
+# the level-zero repository is used.
 #
 # Examples:
+#   ./build_level_zero_loader.sh
+#   ./build_level_zero_loader.sh "" $HOME/my_prefix Debug
 #   ./build_level_zero_loader.sh v1.24.1
 #   ./build_level_zero_loader.sh v1.24.1 $HOME/my_prefix
 #   ./build_level_zero_loader.sh v1.24.1 $HOME/my_prefix Debug
@@ -47,16 +52,29 @@
 # any command in a pipeline that fails (not just the last one).
 set -euo pipefail
 
-# Parse arguments: the release tag is required, the install prefix and build
-# type are optional.
+# Parse arguments: all of them are optional.
+# TAG defaults to the newest release tag (vMAJOR.MINOR[.PATCH]) on the remote.
 # PREFIX is where the loader/layers are installed (no sudo needed). It must
 # be readable at driver load time (LD_LIBRARY_PATH=${PREFIX}/lib).
 # Defaults to $HOME/local if not specified.
 # BUILD_TYPE (CMAKE_BUILD_TYPE) defaults to Release if not specified.
-TAG="${1:?Usage: $0 <tag> [install_prefix] [build_type]}"
+TAG="${1:-}"
 PREFIX="${2:-$HOME/local}"
 BUILD_TYPE="${3:-Release}"
 REPO_URL="https://github.com/oneapi-src/level-zero"
+
+if [ -z "${TAG}" ]; then
+    echo "=== No tag given, looking up the newest release tag in ${REPO_URL} ==="
+    TAG="$(git ls-remote --tags --refs "${REPO_URL}.git" 2>/dev/null \
+        | sed 's#.*refs/tags/##' \
+        | grep -E '^v[0-9]+\.[0-9]+(\.[0-9]+)?$' \
+        | sort -V | tail -n 1 || true)"
+    if [ -z "${TAG}" ]; then
+        echo "ERROR: could not determine the newest release tag of ${REPO_URL}" >&2
+        echo "Usage: $0 [tag] [install_prefix] [build_type]" >&2
+        exit 1
+    fi
+fi
 
 # Validate the build type: only Release, Debug and RelWithDebInfo are
 # supported (these are CMake's own build type names).

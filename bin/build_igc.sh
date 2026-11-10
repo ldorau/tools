@@ -31,13 +31,17 @@
 # Note: this script is Ubuntu-specific.
 #
 # Usage:
-#   ./build_igc.sh <ref> [install_prefix] [build_type]
+#   ./build_igc.sh [ref] [install_prefix] [build_type]
 #
-# <ref> is any git tag or branch of intel-graphics-compiler, e.g.:
+# [ref] is any git tag or branch of intel-graphics-compiler, e.g.:
 #   - a release tag:  v2.38.5
 #   - a release branch: releases/2.38.x
+# If [ref] is omitted or empty (""), the newest release tag (vX.Y.Z)
+# available in the intel-graphics-compiler repository is used.
 #
 # Examples:
+#   ./build_igc.sh
+#   ./build_igc.sh "" $HOME/my_prefix Debug
 #   ./build_igc.sh v2.38.5
 #   ./build_igc.sh releases/2.38.x $HOME/my_prefix
 #   ./build_igc.sh v2.38.5 $HOME/my_prefix Debug
@@ -56,16 +60,30 @@
 # any command in a pipeline that fails (not just the last one).
 set -euo pipefail
 
-# Parse arguments: the IGC git ref (tag or branch) is required, the install
-# prefix and build type are optional.
+# Parse arguments: all of them are optional.
+# IGC_REF (tag or branch) defaults to the newest release tag (vX.Y.Z) on the
+# remote.
 # PREFIX is the directory IGC is installed into (no sudo needed). It must
 # be readable at driver/ocloc load time (LD_LIBRARY_PATH=${PREFIX}/lib).
 # Defaults to $HOME/local if not specified.
 # BUILD_TYPE (CMAKE_BUILD_TYPE) defaults to Release if not specified.
-IGC_REF="${1:?Usage: $0 <ref> [install_prefix] [build_type]}"
+IGC_REF="${1:-}"
 PREFIX="${2:-$HOME/local}"
 BUILD_TYPE="${3:-Release}"
 REPO_URL="https://github.com/intel/intel-graphics-compiler"
+
+if [ -z "${IGC_REF}" ]; then
+    echo "=== No ref given, looking up the newest release tag in ${REPO_URL} ==="
+    IGC_REF="$(git ls-remote --tags --refs "${REPO_URL}.git" 2>/dev/null \
+        | sed 's#.*refs/tags/##' \
+        | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+        | sort -V | tail -n 1 || true)"
+    if [ -z "${IGC_REF}" ]; then
+        echo "ERROR: could not determine the newest release tag of ${REPO_URL}" >&2
+        echo "Usage: $0 [ref] [install_prefix] [build_type]" >&2
+        exit 1
+    fi
+fi
 
 # Validate the build type: only Release, Debug and RelWithDebInfo are
 # supported (these are CMake's own build type names).

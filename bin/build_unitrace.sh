@@ -36,9 +36,14 @@
 #     loader; disabled (-DBUILD_WITH_OPENCL=0) if not installed.
 #
 # Usage:
-#   ./build_unitrace.sh <tag> [install_prefix] [build_type]
+#   ./build_unitrace.sh [tag] [install_prefix] [build_type]
+#
+# If [tag] is omitted or empty (""), the newest final (non -rcN) release tag
+# (pti-MAJOR.MINOR.PATCH) available in the pti-gpu repository is used.
 #
 # Examples:
+#   ./build_unitrace.sh
+#   ./build_unitrace.sh "" $HOME/my_prefix Debug
 #   ./build_unitrace.sh pti-1.1.0-rc1
 #   ./build_unitrace.sh pti-1.1.0-rc1 $HOME/my_prefix
 #   ./build_unitrace.sh pti-1.1.0-rc1 $HOME/my_prefix Debug
@@ -50,15 +55,30 @@
 # any command in a pipeline that fails (not just the last one).
 set -euo pipefail
 
-# Parse arguments: the release tag is required, the install prefix and build
-# type are optional.
+# Parse arguments: all of them are optional.
+# TAG defaults to the newest final (non -rcN) release tag
+# (pti-MAJOR.MINOR.PATCH) on the remote. Release candidates are skipped
+# because "sort -V" orders e.g. pti-1.2.0-rc1 after pti-1.2.0.
 # PREFIX is where the unitrace binary/libraries/scripts are installed (no
 # sudo needed). Defaults to $HOME/local if not specified.
 # BUILD_TYPE (CMAKE_BUILD_TYPE) defaults to Release if not specified.
-TAG="${1:?Usage: $0 <tag> [install_prefix] [build_type]}"
+TAG="${1:-}"
 PREFIX="${2:-$HOME/local}"
 BUILD_TYPE="${3:-Release}"
 REPO_URL="https://github.com/intel/pti-gpu"
+
+if [ -z "${TAG}" ]; then
+    echo "=== No tag given, looking up the newest release tag in ${REPO_URL} ==="
+    TAG="$(git ls-remote --tags --refs "${REPO_URL}.git" 2>/dev/null \
+        | sed 's#.*refs/tags/##' \
+        | grep -E '^pti-[0-9]+\.[0-9]+\.[0-9]+$' \
+        | sort -V | tail -n 1 || true)"
+    if [ -z "${TAG}" ]; then
+        echo "ERROR: could not determine the newest release tag of ${REPO_URL}" >&2
+        echo "Usage: $0 [tag] [install_prefix] [build_type]" >&2
+        exit 1
+    fi
+fi
 
 # Validate the build type: only Release, Debug and RelWithDebInfo are
 # supported (these are CMake's own build type names).
