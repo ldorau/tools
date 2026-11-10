@@ -1,0 +1,19 @@
+#!/bin/bash
+
+LOG_PREFIX="/home/loggedin/logs/unlocked-time"
+
+if [ "$1" = "a" ]; then
+	LOGS=$(sudo ls -1 -t ${LOG_PREFIX}-*.log | sort -n)
+	for log in $LOGS; do
+		sudo grep -e "cumulative_today" $log | tail -n1 # | awk '{ print $1" "$2" | "$6 }'
+	done
+else
+	LOG=${LOG_PREFIX}-$(date "+%Y-%m-%d").log
+
+	sudo ls -1 $LOG || exit 1
+
+	LAST=$(sudo grep -e "cumulative_today" $LOG | tail -n1)
+
+	echo $LAST
+	echo $LAST | cut -d= -f2 | cut -d' ' -f1
+fi
