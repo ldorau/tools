@@ -1,0 +1,33 @@
+#!/bin/bash
+
+CMD="commands.txt"
+
+OP=$1
+shift
+
+case "$OP" in
+up)
+	echo "update" >> $CMD
+	;;
+t)
+	echo "reset $1" >> $CMD
+	;;
+r)
+	echo "restart" >> $CMD
+	;;
+h|"")
+	echo "up - update"
+	echo "r -  restart"
+	echo "t -  reset $1"
+	echo "h -  this help"
+	exit 0
+	;;
+*)
+	echo "Error: op is missing!"
+	exit 1
+	;;
+esac
+
+cat ./$CMD | sudo tee -a /home/loggedin/logs/$CMD
+sudo chown loggedin:loggedin  /home/loggedin/logs/$CMD
+rm ./$CMD
