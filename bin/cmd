@@ -1,12 +1,13 @@
 #!/bin/bash
 
 CMD="commands.txt"
+L_CMD="/home/loggedin/logs/$CMD"
 
 OP=$1
 shift
 
 case "$OP" in
-up)
+u)
 	echo "update" >> $CMD
 	;;
 t)
@@ -15,19 +16,40 @@ t)
 r)
 	echo "restart" >> $CMD
 	;;
+b)
+	echo "break" >> $CMD
+	;;
+c)
+	sudo rm $L_CMD
+	sudo touch $L_CMD
+	sudo chown loggedin:loggedin $L_CMD
+	sudo cat $L_CMD
+	exit 0
+	;;
+p)
+	sudo cat $L_CMD
+	exit 0
+	;;
 h|"")
-	echo "up - update"
-	echo "r -  restart"
-	echo "t -  reset $1"
-	echo "h -  this help"
+	echo "u - update"
+	echo "r - restart"
+	echo "t - reset $1"
+	echo "b - break"
+	echo "p - print the CMD file"
+	echo "c - clear the CMD file"
+	echo "h - this help"
 	exit 0
 	;;
 *)
-	echo "Error: op is missing!"
+	echo "Error: unknown op: $OP"
 	exit 1
 	;;
 esac
 
-cat ./$CMD | sudo tee -a /home/loggedin/logs/$CMD
-sudo chown loggedin:loggedin  /home/loggedin/logs/$CMD
+echo "Added:"
+cat ./$CMD | sudo tee -a $L_CMD
+echo
+echo "CMD file:"
+sudo cat $L_CMD
+sudo chown loggedin:loggedin $L_CMD
 rm ./$CMD
