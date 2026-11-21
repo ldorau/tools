@@ -33,7 +33,7 @@ p)
 h|"")
 	echo "u - update"
 	echo "r - restart"
-	echo "t - reset $1"
+	echo "t - reset time (arg: \$1)"
 	echo "b - break"
 	echo "p - print the CMD file"
 	echo "c - clear the CMD file"
