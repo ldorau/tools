@@ -1,3 +1,5 @@
 #!/bin/bash
 
+killall monitor || killall -9 monitor
+
 nohup monitor $1 &
