@@ -1,5 +1,9 @@
 #!/bin/bash
 
+function check_rpi_branch() {
+	git merge-base --is-ancestor master origin/rpi && git reset --hard origin/rpi
+}
+
 GIT_ALIAS=$(which git-alias)
 if [ "$GIT_ALIAS" = "" ]; then
 	if [[ "$0" = *"bash"* ]]; then
@@ -72,9 +76,11 @@ if [ "$(cat $DATE_FILE)" != "$DATE" ]; then
 	if [ "$REPO" != "" ]; then
 		echo "Pulling mytools ..."
 		proxy-check
-		if ! git pull; then
+		if git pull; then
+			check_rpi_branch
+		else
 			proxy-toggle
-			git pull || true
+			( git pull && check_rpi_branch ) || true
 		fi || true
 	fi || true
 	cd $WD

@@ -173,26 +173,72 @@ echo "  Required LLVM version: ${LLVM_VERSION} (major: ${LLVM_MAJOR})"
 # --------------------------------------------------------------------------
 # Step 3: Clone build dependencies
 # --------------------------------------------------------------------------
-# vc-intrinsics, SPIRV-Tools and SPIRV-Headers track "master" (not version
-# specific). llvm-project is cloned at the matching llvmorg-<version> tag.
-# OpenCL-Clang and SPIRV-LLVM-Translator are cloned *inside* the llvm tree
-# (llvm-project/llvm/projects/...) as expected by IGC's build system, at
+# vc-intrinsics, SPIRV-Tools and SPIRV-Headers track "master"/"main" (not
+# version specific). llvm-project is cloned at the matching llvmorg-<version>
+# tag. OpenCL-Clang and SPIRV-LLVM-Translator are cloned *inside* the llvm
+# tree (llvm-project/llvm/projects/...) as expected by IGC's build system, at
 # their version-specific branches (ocl-open-<major>0 /
 # llvm_release_<major>0).
+#
+# Floating deps MUST be pinned to their state as of the IGC ref's commit
+# date. A shallow clone of current master breaks tagged IGC releases once
+# those repos move on -- e.g. vc-intrinsics commit cddd0aa (2026-11-19)
+# removed dp/line/lrp/pln/sad2 and all llvm.genx.va.* intrinsics a few hours
+# after IGC v2.43.10 was tagged, which still references them in
+# cisa_gen_intrinsics.json, causing GenXIntrinsicsBuildMap.inc compile
+# errors ("‘genx_dp2’ is not a member of ‘llvm::GenXIntrinsic’").
 echo ""
 echo "=== [3/5] Cloning build dependencies (LLVM ${LLVM_VERSION}) ==="
-git clone --quiet --depth 1 https://github.com/intel/vc-intrinsics "${WORKDIR}/vc-intrinsics" &
-git clone --quiet --depth 1 https://github.com/KhronosGroup/SPIRV-Tools.git "${WORKDIR}/SPIRV-Tools" &
-git clone --quiet --depth 1 https://github.com/KhronosGroup/SPIRV-Headers.git "${WORKDIR}/SPIRV-Headers" &
+IGC_COMMIT_DATE=$(git -C "${WORKDIR}/igc" log -1 --format=%cI)
+echo "  Pinning floating deps to their state as of IGC commit date: ${IGC_COMMIT_DATE}"
+
+# Clone a floating-branch repo and check out the newest commit at or before
+# IGC_COMMIT_DATE. No --depth 1: we need history for rev-list --before.
+# These three repos are small enough that a full single-branch clone is fine.
+clone_floating_dep_at_igc_date() {
+    local url="$1"
+    local dest="$2"
+    local name
+    name=$(basename "${dest}")
+    git clone --quiet --single-branch "${url}" "${dest}"
+    local rev
+    rev=$(git -C "${dest}" rev-list -n 1 --before="${IGC_COMMIT_DATE}" HEAD)
+    if [ -z "${rev}" ]; then
+        echo "ERROR: no commit in ${name} at or before ${IGC_COMMIT_DATE}" >&2
+        return 1
+    fi
+    git -C "${dest}" checkout --quiet "${rev}"
+    echo "  ${name}: ${rev:0:12} ($(git -C "${dest}" log -1 --format=%cs "${rev}"))"
+}
+
+FLOATING_PIDS=()
+clone_floating_dep_at_igc_date https://github.com/intel/vc-intrinsics \
+    "${WORKDIR}/vc-intrinsics" &
+FLOATING_PIDS+=($!)
+clone_floating_dep_at_igc_date https://github.com/KhronosGroup/SPIRV-Tools.git \
+    "${WORKDIR}/SPIRV-Tools" &
+FLOATING_PIDS+=($!)
+clone_floating_dep_at_igc_date https://github.com/KhronosGroup/SPIRV-Headers.git \
+    "${WORKDIR}/SPIRV-Headers" &
+FLOATING_PIDS+=($!)
 git clone --quiet --depth 1 -b "llvmorg-${LLVM_VERSION}" https://github.com/llvm/llvm-project "${WORKDIR}/llvm-project" &
-wait
+FLOATING_PIDS+=($!)
+for pid in "${FLOATING_PIDS[@]}"; do
+    if ! wait "${pid}"; then
+        echo "ERROR: failed to clone a build dependency" >&2
+        exit 1
+    fi
+done
 
 mkdir -p "${WORKDIR}/llvm-project/llvm/projects"
 git clone --quiet --depth 1 -b "ocl-open-${LLVM_MAJOR}0" https://github.com/intel/opencl-clang \
     "${WORKDIR}/llvm-project/llvm/projects/opencl-clang" &
+pid_ocl=$!
 git clone --quiet --depth 1 -b "llvm_release_${LLVM_MAJOR}0" https://github.com/KhronosGroup/SPIRV-LLVM-Translator \
     "${WORKDIR}/llvm-project/llvm/projects/llvm-spirv" &
-wait
+pid_spirv=$!
+wait "${pid_ocl}" || { echo "ERROR: failed to clone opencl-clang" >&2; exit 1; }
+wait "${pid_spirv}" || { echo "ERROR: failed to clone SPIRV-LLVM-Translator" >&2; exit 1; }
 
 for d in vc-intrinsics SPIRV-Tools SPIRV-Headers llvm-project \
     llvm-project/llvm/projects/opencl-clang llvm-project/llvm/projects/llvm-spirv; do
