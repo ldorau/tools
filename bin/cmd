@@ -19,6 +19,12 @@ r)
 b)
 	echo "break" >> $CMD
 	;;
+db)
+	echo "disable-break" >> $CMD
+	;;
+sb)
+	echo "setUnlockQuotaEnabled $1" >> $CMD
+	;;
 c)
 	sudo rm $L_CMD
 	sudo touch $L_CMD
