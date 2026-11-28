@@ -13,6 +13,9 @@ u)
 t)
 	echo "reset $1" >> $CMD
 	;;
+h)
+	echo "hibernate $1" >> $CMD
+	;;
 r)
 	echo "restart" >> $CMD
 	;;
@@ -25,6 +28,16 @@ db)
 sb)
 	echo "setUnlockQuotaEnabled $1" >> $CMD
 	;;
+dc)
+	echo "download-config" >> $CMD
+	;;
+uc)
+	echo "upload-config" >> $CMD
+	;;
+p)
+	sudo cat $L_CMD
+	exit 0
+	;;
 c)
 	sudo rm $L_CMD
 	sudo touch $L_CMD
@@ -32,18 +45,18 @@ c)
 	sudo cat $L_CMD
 	exit 0
 	;;
-p)
-	sudo cat $L_CMD
-	exit 0
-	;;
-h|"")
-	echo "u - update"
-	echo "r - restart"
-	echo "t - reset time (arg: \$1)"
-	echo "b - break"
-	echo "p - print the CMD file"
-	echo "c - clear the CMD file"
-	echo "h - this help"
+"")
+	echo "u  - update"
+	echo "t  - reset time (arg: \$1)"
+	echo "h  - hibernate (arg: \$1)"
+	echo "r  - restart"
+	echo "b  - break"
+	echo "db - disable-break"
+	echo "sb - set-break [t|f] (setUnlockQuotaEnabled [true|false])"
+	echo "dc - download-config"
+	echo "uc - upload-config"
+	echo "p  - print the cmd file"
+	echo "c  - clear the cmd file"
 	exit 0
 	;;
 *)
